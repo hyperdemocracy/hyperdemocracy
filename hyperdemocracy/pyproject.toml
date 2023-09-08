@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "hyperdemocracy"
+version = "0.1.0"
+description = "core python client package for distribution and re-use"
+authors = ["Forrest Murray <fmurray@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "hyperdemocracy"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

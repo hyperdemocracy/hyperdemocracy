@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "legisqa"
+version = "0.1.0"
+description = ""
+authors = ["Forrest Murray <fmurray@gmail.com>"]
+readme = "README.md"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+hyperdemocracy = {path="../hyperdemocracy", develop=true}
+
+
