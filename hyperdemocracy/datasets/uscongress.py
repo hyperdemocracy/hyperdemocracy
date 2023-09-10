@@ -30,9 +30,14 @@ import re
 from typing import Optional, Union
 
 from bs4 import BeautifulSoup
+from datasets import Dataset
+from datasets import load_dataset
+from langchain.schema import Document
 import pandas as pd
 from pydantic import BaseModel
 import xmltodict
+
+from hyperdemocracy import langchain_helpers
 
 
 logger = logging.getLogger(__name__)
@@ -382,6 +387,11 @@ def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]
         CONGRES_GOV_TYPE_MAP[bill_dict["type"]],
         bill_dict["number"],
     )
+    govtrack_url = "https://www.govtrack.us/congress/bills/{}/{}{}".format(
+        bill_dict["congress"],
+        bill_dict["type"].lower(),
+        bill_dict["number"],
+    )
 
     # take most recent summary
     # TODO: check if this matches the text version
@@ -400,6 +410,7 @@ def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]
         "number": bill_dict["number"],
         "origin_chamber": bill_dict["originChamber"],
         "congress_gov_url": congress_gov_url,
+        "govtrack_url": govtrack_url,
         "summary_text": summary_text,
         "summary_meta": summary_meta,
         "subjects": bill_dict["subjects"],
@@ -529,40 +540,63 @@ def get_hf_dataframe(base_data_path: Union[str, Path], base_congress: int, max_r
         stats[stats_key] += 1
         rows.append(row)
 
+    logging.info(f"{stats=}")
+
     df = pd.DataFrame(rows)
     return df
+
+
+def write_hf_parquet(base_data_path: Union[str, Path], base_congress: int, max_rows: Optional[int]=None):
+
+    df = get_hf_dataframe(base_data_path, base_congress, max_rows)
+    df.to_parquet(f"data-{base_congress}.parquet")
+
+
+def get_langchain_docs(hf_dataset: Dataset):
+    docs = []
+    for row in hf_dataset:
+        if row["text"] is None:
+            continue
+
+        metadata = {
+            "title": row["title"],
+            "congress": row["congress"],
+            "type": row["type"],
+            "number": row["number"],
+            "origin_chamber": row["origin_chamber"],
+            "congress_gov_url": row["congress_gov_url"],
+            #            "govtrack_url": row["govtrack_url"],
+            #            "summary_text": row["summary_text"],
+            "text_url": row["text_url"],
+            "text_type": row["text_type"],
+            "text_date": row["text_date"],
+            "subjects": row["subjects"],
+            "policy_area": row["policy_area"],
+        }
+
+        doc = Document(
+            page_content=row['text'],
+            metadata=metadata,
+        )
+        docs.append(doc)
+    return docs
 
 
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    base_data_path = Path("/home/galtay/data/hyperdemocracy/congress-scraper")
+    base_data_path = Path("/home/galtay/data/hyperdemocracy")
     base_congress = 118
-    max_rows = 10
+#    max_rows = 10
     max_rows = None
 
-    df = get_hf_dataframe(base_data_path, base_congress, max_rows)
+#    write_hf_parquet(base_data_path / "congress-scraper", base_congress, max_rows)
 
-    cols = [
-        "title",
-        "congress",
-        "type",
-        "number",
-        "origin_chamber",
-        "congress_gov_url",
-        "summary_text",
-        "summary_meta",
-        "subjects",
-        "policy_area",
-        "bill",
-        "metadata_xml",
-
-        "text_type",
-        "text_date",
-        "text_url",
-        "text_xml",
-        "text",
-    ]
-    df[cols].to_parquet(f"data-{base_congress}.parquet")
+    hf_dataset_name = "hyperdemocracy/us-congress-bills"
+    ds = load_dataset(hf_dataset_name)
+    lc_docs = get_langchain_docs(ds['train'])
+    lc_docs_path = base_data_path / "lc_docs"
+    lc_docs_file = lc_docs_path / "lc_docs.jsonl"
+    langchain_helpers.write_docs_to_jsonl(lc_docs, lc_docs_file)
 
