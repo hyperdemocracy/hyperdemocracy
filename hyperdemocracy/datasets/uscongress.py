@@ -27,7 +27,7 @@ import logging
 import os
 from pathlib import Path
 import re
-from typing import Optional
+from typing import Optional, Union
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -363,178 +363,187 @@ class BillMetadataXml:
         )
 
 
-if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.INFO)
+def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]):
+
+    with open(metadata_path, "r") as fp:
+        metadata_xml = fp.read()
+    bmx = BillMetadataXml(metadata_xml)
+    bill = bmx.as_pydantic()
+
+    # for now the huggingface datasets preview doesn't suport datetimes
+    # i'm going to keep them as strings b/c people can also reconvert them
+
+    bill_dict_dt = bill.model_dump() # this will keep datetime objects
+    bill_dict = json.loads(bill.model_dump_json())  # this will make the datetime objects strings
+
+    congress_gov_url = "https://www.congress.gov/bill/{}th-congress/{}/{}".format(
+        bill_dict["congress"],
+        CONGRES_GOV_TYPE_MAP[bill_dict["type"]],
+        bill_dict["number"],
+    )
+
+    # take most recent summary
+    # TODO: check if this matches the text version
+    if len(bill_dict["summaries"]) == 0:
+        summary_text = pd.NA
+        summary_meta = pd.NA
+    else:
+        summary = bill_dict["summaries"][-1]
+        summary_text = summary.pop("text")
+        summary_meta = summary
+
+    base_row = {
+        "title": bill_dict["one_title"],
+        "congress": bill_dict["congress"],
+        "type": bill_dict["type"],
+        "number": bill_dict["number"],
+        "origin_chamber": bill_dict["originChamber"],
+        "congress_gov_url": congress_gov_url,
+        "summary_text": summary_text,
+        "summary_meta": summary_meta,
+        "subjects": bill_dict["subjects"],
+        "policy_area": bill_dict["policyArea"],
+        "bill": bill_dict,
+        "metadata_xml": metadata_xml,
+    }
+
+    if len(bill_dict["textVersions"]) == 0:
+        # no text versions available
+        stats_key = "no_tvs"
+        extras_row = {
+            "text_type": pd.NA,
+            "text_date": pd.NA,
+            "text_url": pd.NA,
+            "text_xml": pd.NA,
+            "text": pd.NA,
+        }
+        row = {**base_row, **extras_row}
+        logger.info(f"{metadata_path} has no text versions. {congress_gov_url}")
+        return row, stats_key
+
+    # take the most recent text version
+    # TODO: take less recent versions if we dont find url? 
+    tv = bill_dict["textVersions"][-1]
+
+    if tv["url"] is None:
+        # no text url available
+        stats_key = "no_url"
+        extras_row = {
+            "text_type": tv["type"],
+            "text_date": tv["date"],
+            "text_url": pd.NA,
+            "text_xml": pd.NA,
+            "text": pd.NA,
+        }
+        row = {**base_row, **extras_row}
+        logger.info(f"{metadata_path} has no text versions with url. {congress_gov_url}")
+        return row, stats_key
 
 
+    tv_fname = Path(tv["url"]).name
+    if tv_fname.startswith("BILLS"):
+        pattern = "BILLS-(\d{1,3})(hconres|hjres|hr|hres|s|sconres|sjres|sres)(\d{1,5})([A-Za-z]+)\.xml"
+        match = re.match(pattern, tv_fname)
+        if match is None:
+            raise ValueError()
+        congres, bill_type, bill_number, bill_version = match.groups()
+        text_path = base_text_path / "BILLS" / str(bill_dict["congress"]) / str(1) /  bill_type / tv_fname
 
-    base_data_path = Path("/home/galtay/Downloads/congress/data")
+    elif tv_fname.startswith("PLAW"):
+        pattern = "PLAW-(\d{1,3})(publ)(\d{1,5})\.xml"
+        match = re.match(pattern, tv_fname)
+        if match is None:
+            raise ValueError()
+        congres, bill_type, bill_number = match.groups()
+        bill_version = None
+        text_path = base_text_path / "PLAW" / str(bill_dict["congress"]) / "public" / tv_fname
 
-    base_congress = 118
-#    base_text_path = base_data_path / "data" / "govinfo" / "BILLS" / str(base_congress) / str(1)
-    base_text_path = base_data_path / "data" / "govinfo" 
-    metadata_paths = list((base_data_path / "data" / str(base_congress) / "bills").glob("*/*/*.xml"))
+    else:
+        raise ValueError()
+
+
+    if not text_path.exists():
+        # no text file found
+        stats_key = "no_file"
+        extras_row = {
+            "text_type": tv["type"],
+            "text_date": tv["date"],
+            "text_url": tv["url"],
+            "text_xml": pd.NA,
+            "text": pd.NA,
+        }
+        row = {**base_row, **extras_row}
+        logger.info(f"{metadata_path} has no local file matching {tv} (checked {text_path}). {congress_gov_url}")
+        return row, stats_key
+
+
+    with text_path.open("r") as fp:
+        text_xml = fp.read()
+
+    soup = BeautifulSoup(text_xml, 'xml')
+    bill_text = soup.get_text(separator=" ").strip()
+
+    # we can try other things later 
+    #bill_preamble_text = soup.find("preamble").get_text(separator=" ")
+    #bill_resolution_body_text = soup.find("resolution-body").get_text(separator=" ")
+    #dd = xmltodict.parse(text_xml)
+
+
+    stats_key = "ok"
+    extras_row = {
+        "text_type": tv["type"],
+        "text_date": tv["date"],
+        "text_url": tv["url"],
+        "text_xml": text_xml,
+        "text": bill_text,
+    }
+    row = {**base_row, **extras_row}
+    return row, stats_key
+
+
+def get_hf_dataframe(base_data_path: Union[str, Path], base_congress: int, max_rows: Optional[int]=None):
+
+    logger.info(f"writing hf parquet with {base_data_path=} and {base_congress=}")
+    base_text_path = base_data_path / "data" / "govinfo"
+    metadata_paths = sorted(list((base_data_path / "data" / str(base_congress) / "bills").glob("*/*/*.xml")))
+    logger.info(f"found {len(metadata_paths)} bill metadata files")
+
+    if max_rows is not None and max_rows < len(metadata_paths):
+        logger.info(f"restricting file list to {max_rows} entries")
+        metadata_paths = metadata_paths[:max_rows]
 
     stats = {
         "no_tvs": 0,
         "no_url": 0,
         "no_file": 0,
+        "ok": 0,
     }
 
     bill_types = Counter()
     bill_versions = Counter()
 
     rows = []
-    for file_path in metadata_paths:
-
-        metadata_xml = open(file_path, "r").read()
-        bmx = BillMetadataXml(metadata_xml)
-        bill = bmx.as_pydantic()
-
-        # for now the huggingface datasets preview doesn't suport datetimes
-        # i'm going to keep them as strings b/c people can also reconvert them
-
-        bill_dict_dt = bill.model_dump() # this will keep datetime objects
-        bill_dict = json.loads(bill.model_dump_json())  # this will make the datetime objects strings
-
-        congress_gov_url = "https://www.congress.gov/bill/{}th-congress/{}/{}".format(
-            bill_dict["congress"],
-            CONGRES_GOV_TYPE_MAP[bill_dict["type"]],
-            bill_dict["number"],
-        )
-
-        # take most recent summary
-        # TODO: check if this matches the text version
-        if len(bill_dict["summaries"]) == 0:
-            summary_text = pd.NA
-            summary_meta = pd.NA
-        else:
-            summary = bill_dict["summaries"][-1]
-            summary_text = summary.pop("text")
-            summary_meta = summary
-
-
-        if len(bill_dict["textVersions"]) == 0:
-            # no text versions available
-            stats["no_tvs"] += 1
-            row = {
-                "title": bill_dict["one_title"],
-                "congress": bill_dict["congress"],
-                "type": bill_dict["type"],
-                "number": bill_dict["number"],
-                "origin_chamber": bill_dict["originChamber"],
-                "congress_gov_url": congress_gov_url,
-                "summary_text": summary_text,
-                "summary_meta": summary_meta,
-                "subjects": bill_dict["subjects"],
-                "policy_area": bill_dict["policyArea"],
-
-                "bill": bill_dict,
-                "metadata_xml": metadata_xml,
-                "text_type": pd.NA,
-                "text_date": pd.NA,
-                "text_url": pd.NA,
-                "text_xml": pd.NA,
-                "text": pd.NA,
-            }
-            rows.append(row)
-            continue
-
-        # take the most recent text version
-        tv = bill_dict["textVersions"][-1]
-
-        if tv["url"] is None:
-            # no text url available
-            stats["no_url"] += 1
-            row = {
-                "title": bill_dict["one_title"],
-                "congress": bill_dict["congress"],
-                "type": bill_dict["type"],
-                "number": bill_dict["number"],
-                "origin_chamber": bill_dict["originChamber"],
-                "congress_gov_url": congress_gov_url,
-                "summary_text": summary_text,
-                "summary_meta": summary_meta,
-                "subjects": bill_dict["subjects"],
-                "policy_area": bill_dict["policyArea"],
-
-                "bill": bill_dict,
-                "metadata_xml": metadata_xml,
-                "text_type": tv["type"],
-                "text_date": tv["date"],
-                "text_url": pd.NA,
-                "text_xml": pd.NA,
-                "text": pd.NA,
-            }
-            rows.append(row)
-            continue
-
-        tv_fname = Path(tv["url"]).name
-        if tv_fname.startswith("BILLS"):
-            pattern = "BILLS-(\d{1,3})(hconres|hjres|hr|hres|s|sconres|sjres|sres)(\d{1,5})([A-Za-z]+)\.xml"
-            match = re.match(pattern, tv_fname)
-            if match is None:
-                raise ValueError()
-            congres, bill_type, bill_number, bill_version = match.groups()
-            text_path = base_text_path / "BILLS" / str(bill_dict["congress"]) / str(1) /  bill_type / tv_fname
-
-        elif tv_fname.startswith("PLAW"):
-            pattern = "PLAW-(\d{1,3})(publ)(\d{1,5})\.xml"
-            match = re.match(pattern, tv_fname)
-            if match is None:
-                raise ValueError()
-            congres, bill_type, bill_number = match.groups()
-            bill_version = None
-            text_path = base_text_path / "PLAW" / str(bill_dict["congress"]) / "public" / tv_fname
-
-        else:
-            raise ValueError()
-
-        bill_types[bill_type] += 1
-        bill_versions[bill_version] += 1
-
-        if not text_path.exists():
-            stats["no_file"] += 1
-
-        bill_url = "https://www.govinfo.gov/app/details" + "/" + os.path.splitext(tv_fname)[0]
-
-        with text_path.open("r") as fp:
-            text_xml = fp.read()
-
-        soup = BeautifulSoup(text_xml, 'xml')
-        bill_text = soup.get_text(separator=" ").strip()
-
-
-        # we can try other things later 
-        #bill_preamble_text = soup.find("preamble").get_text(separator=" ")
-        #bill_resolution_body_text = soup.find("resolution-body").get_text(separator=" ")
-        #dd = xmltodict.parse(text_xml)
-
-        row = {
-            "title": bill_dict["one_title"],
-            "congress": bill_dict["congress"],
-            "type": bill_dict["type"],
-            "number": bill_dict["number"],
-            "origin_chamber": bill_dict["originChamber"],
-            "congress_gov_url": congress_gov_url,
-            "summary_text": summary_text,
-            "summary_meta": summary_meta,
-            "subjects": bill_dict["subjects"],
-            "policy_area": bill_dict["policyArea"],
-
-            "bill": bill_dict,
-            "metadata_xml": metadata_xml,
-            "text_type": tv["type"],
-            "text_date": tv["date"],
-            "text_url": tv["url"],
-            "text_xml": text_xml,
-            "text": bill_text,
-        }
+    for metadata_path in metadata_paths:
+        row, stats_key = get_hf_row(metadata_path, base_text_path)
+        stats[stats_key] += 1
         rows.append(row)
 
-
     df = pd.DataFrame(rows)
+    return df
+
+
+if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.INFO)
+
+    base_data_path = Path("/home/galtay/data/hyperdemocracy/congress-scraper")
+    base_congress = 118
+    max_rows = 10
+    max_rows = None
+
+    df = get_hf_dataframe(base_data_path, base_congress, max_rows)
+
     cols = [
         "title",
         "congress",
@@ -546,9 +555,9 @@ if __name__ == "__main__":
         "summary_meta",
         "subjects",
         "policy_area",
-
         "bill",
         "metadata_xml",
+
         "text_type",
         "text_date",
         "text_url",
