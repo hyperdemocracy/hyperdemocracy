@@ -560,7 +560,7 @@ def get_langchain_docs(hf_dataset: Dataset) -> list[Document]:
             "number": row["number"],
             "origin_chamber": row["origin_chamber"],
             "congress_gov_url": row["congress_gov_url"],
-            #            "govtrack_url": row["govtrack_url"],
+            "govtrack_url": row["govtrack_url"],
             #            "summary_text": row["summary_text"],
             "text_url": row["text_url"],
             "text_type": row["text_type"],
