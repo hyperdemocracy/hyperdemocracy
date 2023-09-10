@@ -546,13 +546,7 @@ def get_hf_dataframe(base_data_path: Union[str, Path], base_congress: int, max_r
     return df
 
 
-def write_hf_parquet(base_data_path: Union[str, Path], base_congress: int, max_rows: Optional[int]=None):
-
-    df = get_hf_dataframe(base_data_path, base_congress, max_rows)
-    df.to_parquet(f"data-{base_congress}.parquet")
-
-
-def get_langchain_docs(hf_dataset: Dataset):
+def get_langchain_docs(hf_dataset: Dataset) -> list[Document]:
     docs = []
     for row in hf_dataset:
         if row["text"] is None:
@@ -579,6 +573,7 @@ def get_langchain_docs(hf_dataset: Dataset):
             metadata=metadata,
         )
         docs.append(doc)
+
     return docs
 
 
@@ -591,7 +586,9 @@ if __name__ == "__main__":
 #    max_rows = 10
     max_rows = None
 
-#    write_hf_parquet(base_data_path / "congress-scraper", base_congress, max_rows)
+#    df = get_hf_dataframe(base_data_path, base_congress, max_rows)
+#    df.to_parquet(f"data-{base_congress}.parquet")
+
 
     hf_dataset_name = "hyperdemocracy/us-congress-bills"
     ds = load_dataset(hf_dataset_name)
