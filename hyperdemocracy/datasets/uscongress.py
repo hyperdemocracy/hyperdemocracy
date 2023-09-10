@@ -31,7 +31,8 @@ from typing import Optional, Union
 
 from bs4 import BeautifulSoup
 from datasets import Dataset
-from datasets import load_dataset
+import huggingface_hub
+from huggingface_hub import HfApi
 from langchain.schema import Document
 import pandas as pd
 from pydantic import BaseModel
@@ -168,7 +169,7 @@ class Bill(BaseModel):
     relatedBills: list[RelatedBill]
     actions: list[Action]
     cboCostEstimates: list[CboCostEstimate]
-    # cdata ? 
+    # cdata ?
     subjects: list[str] = []
     policyArea: Optional[str] = None
     summaries: list[Summary] = []
@@ -434,7 +435,7 @@ def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]
         return row, stats_key
 
     # take the most recent text version
-    # TODO: take less recent versions if we dont find url? 
+    # TODO: take less recent versions if we dont find url?
     tv = bill_dict["textVersions"][-1]
 
     if tv["url"] is None:
@@ -495,7 +496,7 @@ def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]
     soup = BeautifulSoup(text_xml, 'xml')
     bill_text = soup.get_text(separator=" ").strip()
 
-    # we can try other things later 
+    # we can try other things later
     #bill_preamble_text = soup.find("preamble").get_text(separator=" ")
     #bill_resolution_body_text = soup.find("resolution-body").get_text(separator=" ")
     #dd = xmltodict.parse(text_xml)
@@ -576,24 +577,45 @@ def get_langchain_docs(hf_dataset: Dataset) -> list[Document]:
 
     return docs
 
+def upload_file_to_hf(hf_org, dataset_name, local_path, repo_path, dryrun=True):
+    """Upload a file to hub dataset repository.
+
+    https://huggingface.co/docs/huggingface_hub/package_reference/hf_api#huggingface_hub.HfApi.upload_file
+    """
+    repo_id = os.path.join(hf_org, dataset_name)
+
+    print(f"going to upload {local_path} to {repo_id} as {repo_path}")
+    if dryrun:
+        print("this is a dryrun. to actually upload, run again with dryrun=False")
+        return
+
+    api = HfApi()
+    print(f"uploading {local_path} to {repo_id}")
+    api.upload_file(
+        path_or_fileobj=local_path,
+        path_in_repo=repo_path,
+        repo_id=repo_id,
+        repo_type="dataset",
+        commit_message=f"upload {local_path} to hub from bigbio repo",
+        commit_description=f"upload {local_path} to hub from bigbio repo",
+    )
+
+
 
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    base_data_path = Path("/home/galtay/data/hyperdemocracy")
+    base_data_path = Path("/mnt/disks/data2/hyperdemocracy/s3/hyperdemocracy/congress-scraper")
     base_congress = 118
 #    max_rows = 10
     max_rows = None
 
-#    df = get_hf_dataframe(base_data_path, base_congress, max_rows)
-#    df.to_parquet(f"data-{base_congress}.parquet")
+    df = get_hf_dataframe(base_data_path, base_congress, max_rows)
+    local_path = f"data-{base_congress}.parquet"
+    df.to_parquet(local_path)
 
-
-    hf_dataset_name = "hyperdemocracy/us-congress-bills"
-    ds = load_dataset(hf_dataset_name)
-    lc_docs = get_langchain_docs(ds['train'])
-    lc_docs_path = base_data_path / "lc_docs"
-    lc_docs_file = lc_docs_path / "lc_docs.jsonl"
-    langchain_helpers.write_docs_to_jsonl(lc_docs, lc_docs_file)
-
+    hf_org = "hyperdemocracy"
+    hf_dataset_name = "us-congress-bills"
+    repo_path = "data" + "/" + local_path
+    upload_file_to_hf(hf_org, hf_dataset_name, local_path, repo_path, dryrun=False)
