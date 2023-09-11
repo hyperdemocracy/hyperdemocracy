@@ -48,7 +48,7 @@ split_docs = langchain_helpers.read_docs_from_jsonl(split_docs_file)
 model_tag = "bge-small-en"
 model_name = "BAAI/bge-small-en"
 model_kwargs = {'device': 'cuda'}
-encode_kwargs = {'normalize_embeddings': False}
+encode_kwargs = {'normalize_embeddings': True}
 embedder = HuggingFaceBgeEmbeddings(
     model_name=model_name,
     model_kwargs=model_kwargs,
@@ -59,9 +59,16 @@ embedder = HuggingFaceBgeEmbeddings(
 vecs = embedder.embed_documents([doc.page_content for doc in split_docs])
 rows = []
 for doc, vec in zip(split_docs, vecs):
+    metadata = doc.metadata.copy()
+    doc_id = metadata.pop("id")
+    chunk_id = "{}-{}".format(doc_id, metadata["start_index"])
+
+    metadata["chunk_id"] = chunk_id
+    metadata["parent_id"] = doc_id
     row = {
+        "id": chunk_id,
         "text": doc.page_content,
-        "metadata": doc.metadata,
+        "metadata": metadata,
         "vec": vec,
     }
     rows.append(row)
