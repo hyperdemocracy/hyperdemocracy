@@ -2,7 +2,7 @@
 name = "hyperdemocracy"
 version = "0.1.0"
 description = "core python client package for distribution and re-use"
-authors = ["Forrest Murray <fmurray@gmail.com>"]
+authors = ["Forrest Murray <fmurray@gmail.com>", "Gabriel Altay <gabriel.altay@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "hyperdemocracy"}]
 
@@ -10,14 +10,14 @@ packages = [{ include = "hyperdemocracy"}]
 python = "^3.11"
 pandas = "^2.1.0"
 datasets = "^2.14.5"
-bs4 = "^0.0.1"
+beautifulsoup4 = "^4.12.2"
 xmltodict = "^0.13.0"
 pydantic = ">=1.9, <2.0"
 lxml = "^4.9.3"
 pyarrow = "^13.0.0"
 langchain = "^0.0.285"
 sentence-transformers = "^2.2.2"
-torch = "^2.0.0, !=2.0.1"
+torch = "^2.0.0"
 chromadb = "^0.4.9"
 openai = "^0.28.0"
 
