@@ -20,6 +20,8 @@ sentence-transformers = "^2.2.2"
 torch = ">=2.0.0, !=2.0.1"
 gradio = "^3.43.2"
 chromadb = "^0.4.9"
+openai = "^0.28.0"
+streamlit = "^1.26.0"
 
 [tool.poetry.group.dev.dependencies]
 huggingface-hub = "^0.16.4"

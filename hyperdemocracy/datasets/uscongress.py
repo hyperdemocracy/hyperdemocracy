@@ -380,8 +380,8 @@ def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]
     # for now the huggingface datasets preview doesn't suport datetimes
     # i'm going to keep them as strings b/c people can also reconvert them
 
-    bill_dict_dt = bill.model_dump() # this will keep datetime objects
-    bill_dict = json.loads(bill.model_dump_json())  # this will make the datetime objects strings
+    bill_dict_dt = bill.dict() # this will keep datetime objects
+    bill_dict = json.loads(bill.json())  # this will make the datetime objects strings
 
     congress_gov_url = "https://www.congress.gov/bill/{}th-congress/{}/{}".format(
         bill_dict["congress"],
@@ -405,11 +405,14 @@ def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]
         summary_meta = summary
 
     base_row = {
+        "id": "{}-{}-{}".format(bill_dict["congress"], bill_dict["type"], bill_dict["number"]),
         "title": bill_dict["one_title"],
         "congress": bill_dict["congress"],
         "type": bill_dict["type"],
         "number": bill_dict["number"],
         "origin_chamber": bill_dict["originChamber"],
+        "sponsors": bill_dict["sponsors"],
+        "cosponsors": bill_dict["cosponsors"],
         "congress_gov_url": congress_gov_url,
         "govtrack_url": govtrack_url,
         "summary_text": summary_text,
@@ -554,14 +557,17 @@ def get_langchain_docs(hf_dataset: Dataset) -> list[Document]:
             continue
 
         metadata = {
+            "id": row["id"],
             "title": row["title"],
             "congress": row["congress"],
             "type": row["type"],
             "number": row["number"],
             "origin_chamber": row["origin_chamber"],
+            "sponsors": row["sponsors"],
+            "cosponsors": row["cosponsors"],
             "congress_gov_url": row["congress_gov_url"],
             "govtrack_url": row["govtrack_url"],
-            #            "summary_text": row["summary_text"],
+            "summary_text": row["summary_text"],
             "text_url": row["text_url"],
             "text_type": row["text_type"],
             "text_date": row["text_date"],
