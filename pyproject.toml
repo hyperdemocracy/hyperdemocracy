@@ -2,7 +2,7 @@
 name = "hyperdemocracy-monorepo"
 version = "0.1.0"
 description = "Monorepo container"
-authors = ["Your Name <you@example.com>"]
+authors = ["Gabriel Altay <gabriel.altay@gmail.com>", "Forrest Murray <fmurray@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 include = ["VERSION", "README.md"]
