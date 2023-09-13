@@ -1,16 +1,23 @@
 from collections import defaultdict
 import json
+from pathlib import Path
 import textwrap
+
 import chromadb
 import streamlit as st
 from langchain.embeddings import HuggingFaceBgeEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
+from langchain import HuggingFaceHub
+from langchain.llms import LlamaCpp
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 
 
 st.set_page_config(layout="wide")
+
+
+GGUF_PATH = Path("/home/galtay/data/gguf_models")
 
 
 template = """Use the following pieces of context from congressional legislation to answer the question at the end.
@@ -40,13 +47,23 @@ vectorstore = Chroma(
     client=chroma_client,
 )
 
-#llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
-llm = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0)
-#llm = ChatOpenAI(model_name="gpt-4", temperature=0)
-
-
 
 st.title("Q&A Over Congressional Legislation")
+
+
+LLM_PROVIDERS_MODELS = {
+    "openai-chat": [
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-16k",
+        "gpt-4",
+    ],
+    "hfhub": [
+        "databricks/dolly-v2-3b",
+        "google/flan-t5-large",
+        "google/flan-t5-small",
+    ],
+    "llamacpp": sorted(list(GGUF_PATH.glob("*.gguf"))),
+}
 
 
 def get_sponsor_link(sponsors):
@@ -59,15 +76,98 @@ col1, col2 = st.columns(2)
 
 with col1:
 
-    with st.form("my_form"):
-        query = st.text_area('Enter question:')
+    with st.expander("config"):
+
         n_ret_docs = st.slider(
             'N retrieved chunks',
             min_value=1,
-            max_value=20,
+            max_value=40,
             value=10,
             step=1,
         )
+
+        llm_provider = st.selectbox(
+            label="llm provider",
+            options=LLM_PROVIDERS_MODELS.keys(),
+        )
+
+        llm_name = st.selectbox(
+            label="llm",
+            options=LLM_PROVIDERS_MODELS[llm_provider],
+        )
+
+        if llm_provider == "openai-chat":
+            temperature = st.slider(
+                'temperature',
+                min_value=0.0,
+                max_value=2.0,
+                value=0.0,
+                step=0.05
+            )
+            top_p = st.slider(
+                'top_p',
+                min_value=0.0,
+                max_value=1.0,
+                value=1.0,
+                step=0.05
+            )
+
+        if llm_provider == "llamacpp":
+            n_ctx = st.slider(
+                'n_ctx',
+                min_value=512,
+                max_value=16384,
+                value=4096,
+                step=64
+            )
+            max_tokens = st.slider(
+                'max_tokens',
+                min_value=512,
+                max_value=16384,
+                value=512,
+                step=64
+            )
+            temperature = st.slider(
+                'temperature',
+                min_value=0.0,
+                max_value=1.5,
+                value=0.0,
+                step=0.05
+            )
+            top_p = st.slider(
+                'top_p',
+                min_value=0.0,
+                max_value=1.0,
+                value=1.0,
+                step=0.05
+            )
+
+
+
+    with st.form("my_form"):
+
+        query = st.text_area('Enter question:')
+
+        if llm_provider == "openai-chat":
+            llm = ChatOpenAI(model_name=llm_name, temperature=0)
+
+        elif llm_provider == "hfhub":
+            llm = HuggingFaceHub(
+                repo_id=llm_name, model_kwargs={"temperature": 0.0, "max_length": 64}
+            )
+
+        elif llm_provider == "llamacpp":
+            llm = LlamaCpp(
+                model_path="/home/galtay/data/gguf_models/llama2-7b-chat-Q4_K_M.gguf",
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p,
+                n_ctx=n_ctx,
+            )
+        else:
+            st.error(f"{llm_name=} not recognized")
+            st.stop()
+
         qa_chain = RetrievalQA.from_chain_type(
             llm,
             retriever=vectorstore.as_retriever(search_kwargs={"k": n_ret_docs}),
@@ -76,9 +176,13 @@ with col1:
         )
         submitted = st.form_submit_button('Submit')
 
-    if submitted:
-        out = qa_chain({"query": query})
+if submitted:
+    out = qa_chain({"query": query})
+    with col1:
         st.info(out["result"])
+else:
+    st.stop()
+
 
 def wrap_text(text):
     return "\n".join(textwrap.wrap(text))
