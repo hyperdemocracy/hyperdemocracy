@@ -1,0 +1,9 @@
+congress:
+  container-name: hd/congress:latest
+  # runs against the data loader
+  commands: [
+    'usc-run govinfo --bulkdata=BILLSTATUS --congress=118'
+  ]
+  mounts:
+    ['s3://hyperdemocracy-dev/data/congress:/data']
+

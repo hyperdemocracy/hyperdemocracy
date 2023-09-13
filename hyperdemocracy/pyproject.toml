@@ -22,10 +22,11 @@ chromadb = "^0.4.9"
 openai = "^0.28.0"
 lancedb = "^0.2.2"
 flagembedding = "^1.0.7"
+prefect-shell = "^0.1.5"
 
 [tool.poetry.group.dev.dependencies]
 huggingface-hub = "^0.16.4"
-congress = "^0.0a1.dev1"
+united-states-congress = { git = "https://github.com/hyperdemocracy/congress.git" }
 
 [build-system]
 requires = ["poetry-core"]

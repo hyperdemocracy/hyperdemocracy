@@ -40,7 +40,6 @@ import xmltodict
 
 from hyperdemocracy import langchain_helpers
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -607,7 +606,6 @@ def upload_file_to_hf(hf_org, dataset_name, local_path, repo_path, dryrun=True):
     )
 
 
-
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
@@ -625,3 +623,67 @@ if __name__ == "__main__":
     hf_dataset_name = "us-congress-bills"
     repo_path = "data" + "/" + local_path
     upload_file_to_hf(hf_org, hf_dataset_name, local_path, repo_path, dryrun=False)
+
+
+
+class USCongressDataset:
+
+    def __init__(self, logger=logging.basicConfig(level=logging.INFO), backend='local', base_path=None):
+        self.logger = logger
+        self.backend = backend
+        self.base_path = base_path
+        self.data_path = Path("congress-scrapper/data")
+        self.base_congress = 118
+        self.max_rows = None
+
+        self.bills = []
+
+    #     self._init_backend()
+
+    # def _init_backend(self):
+    #     self.backend = backends[self.backend](self.base_path)
+
+    def from_files(self, files):
+        # metadata_paths = sorted(list((self.base_path / "data" / str(base_congress) / "bills").glob("*/*/*.xml")))
+        for file in files:
+            print(file)
+            if '.xml' in file:
+                self.bills.append(file)
+
+        return self
+        # logger.info(f"found {len(metadata_paths)} bill metadata files")    
+    
+    def get_bill(self, file):
+        fn =  Path(file).name    
+            
+
+    def get_dataframe(self):
+        logger.info(f"writing hf parquet with {base_data_path=} and {base_congress=}")
+        base_text_path = base_data_path / "data" / "govinfo"
+        metadata_paths = sorted(list((base_data_path / "data" / str(base_congress) / "bills").glob("*/*/*.xml")))
+        logger.info(f"found {len(metadata_paths)} bill metadata files")
+
+        if max_rows is not None and max_rows < len(metadata_paths):
+            logger.info(f"restricting file list to {max_rows} entries")
+            metadata_paths = metadata_paths[:max_rows]
+
+        stats = {
+            "no_tvs": 0,
+            "no_url": 0,
+            "no_file": 0,
+            "ok": 0,
+        }
+
+        bill_types = Counter()
+        bill_versions = Counter()
+
+        rows = []
+        for metadata_path in metadata_paths:
+            row, stats_key = get_hf_row(metadata_path, base_text_path)
+            stats[stats_key] += 1
+            rows.append(row)
+
+        logging.info(f"{stats=}")
+
+        df = pd.DataFrame(rows)
+        return df
