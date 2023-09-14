@@ -19,5 +19,6 @@ pandas = "^2.1.0"
 sentence-transformers = "^2.2.2"
 datasets = "^2.14.5"
 openai = "^0.28.0"
+llama-cpp-python = "^0.2.4"
 
 
