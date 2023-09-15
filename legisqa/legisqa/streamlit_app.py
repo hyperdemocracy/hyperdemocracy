@@ -21,7 +21,7 @@ GGUF_PATH = Path("/home/galtay/data/gguf_models")
 
 
 template = """Use the following pieces of context from congressional legislation to answer the question at the end.
-If you don't know the answer, just say that you don't know, don't try to make up an answer.
+Remember that you can only answer questions about the content of the legislation. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 {context}
 Question: {question}
 Helpful Answer:"""
@@ -48,7 +48,13 @@ vectorstore = Chroma(
 )
 
 
-st.title("Q&A Over Congressional Legislation")
+st.title("LegisQA: Explore the Legislation of the 118th Congress")
+st.write(
+    """Pose inquiries regarding legislation authored by the 118th Congress in 2023
+Choose a model, pose an inquiry, and see a response.
+This application can be used to compare a number of private and open-source language models, using as a common basis the primary sources of bills proposed by the US Congress. some models require longer to run than others.
+Please see hyperdemocracy.us and join our upcoming sessions, where you can learn to code using LLMs and legislation, and exchange ideas on how democracy should change, looking ahead in this young millenium."""
+)
 
 
 LLM_PROVIDERS_MODELS = {
@@ -72,77 +78,77 @@ def get_sponsor_link(sponsors):
     url = "{}/{}".format(base_url, dd["bioguideId"])
     return "[{}]({})".format(dd["fullName"], url)
 
+
+with st.sidebar:
+
+   n_ret_docs = st.slider(
+       'N retrieved chunks',
+       min_value=1,
+       max_value=40,
+       value=10,
+       step=1,
+   )
+
+   llm_provider = st.selectbox(
+       label="llm provider",
+       options=LLM_PROVIDERS_MODELS.keys(),
+   )
+
+   llm_name = st.selectbox(
+       label="llm",
+       options=LLM_PROVIDERS_MODELS[llm_provider],
+   )
+
+   if llm_provider == "openai-chat":
+       temperature = st.slider(
+           'temperature',
+           min_value=0.0,
+           max_value=2.0,
+           value=0.0,
+           step=0.05
+       )
+       top_p = st.slider(
+           'top_p',
+           min_value=0.0,
+           max_value=1.0,
+           value=1.0,
+           step=0.05
+       )
+
+   if llm_provider == "llamacpp":
+       n_ctx = st.slider(
+           'n_ctx',
+           min_value=512,
+           max_value=16384,
+           value=4096,
+           step=64
+       )
+       max_tokens = st.slider(
+           'max_tokens',
+           min_value=512,
+           max_value=16384,
+           value=512,
+           step=64
+       )
+       temperature = st.slider(
+           'temperature',
+           min_value=0.0,
+           max_value=1.5,
+           value=0.0,
+           step=0.05
+       )
+       top_p = st.slider(
+           'top_p',
+           min_value=0.0,
+           max_value=1.0,
+           value=1.0,
+           step=0.05
+       )
+
+
 col1, col2 = st.columns(2)
 
 with col1:
-
-    with st.expander("config"):
-
-        n_ret_docs = st.slider(
-            'N retrieved chunks',
-            min_value=1,
-            max_value=40,
-            value=10,
-            step=1,
-        )
-
-        llm_provider = st.selectbox(
-            label="llm provider",
-            options=LLM_PROVIDERS_MODELS.keys(),
-        )
-
-        llm_name = st.selectbox(
-            label="llm",
-            options=LLM_PROVIDERS_MODELS[llm_provider],
-        )
-
-        if llm_provider == "openai-chat":
-            temperature = st.slider(
-                'temperature',
-                min_value=0.0,
-                max_value=2.0,
-                value=0.0,
-                step=0.05
-            )
-            top_p = st.slider(
-                'top_p',
-                min_value=0.0,
-                max_value=1.0,
-                value=1.0,
-                step=0.05
-            )
-
-        if llm_provider == "llamacpp":
-            n_ctx = st.slider(
-                'n_ctx',
-                min_value=512,
-                max_value=16384,
-                value=4096,
-                step=64
-            )
-            max_tokens = st.slider(
-                'max_tokens',
-                min_value=512,
-                max_value=16384,
-                value=512,
-                step=64
-            )
-            temperature = st.slider(
-                'temperature',
-                min_value=0.0,
-                max_value=1.5,
-                value=0.0,
-                step=0.05
-            )
-            top_p = st.slider(
-                'top_p',
-                min_value=0.0,
-                max_value=1.0,
-                value=1.0,
-                step=0.05
-            )
-
-
 
     with st.form("my_form"):
 
@@ -176,10 +182,17 @@ with col1:
         )
         submitted = st.form_submit_button('Submit')
 
+
+def escape_markdown(text):
+    MD_SPECIAL_CHARS = "\`*_{}[]()#+-.!$"
+    for char in MD_SPECIAL_CHARS:
+        text = text.replace(char, "\\"+char)
+    return text
+
 if submitted:
     out = qa_chain({"query": query})
     with col1:
-        st.info(out["result"])
+        st.info(escape_markdown(out["result"]))
 else:
     st.stop()
 
@@ -220,13 +233,13 @@ with col2:
                 get_sponsor_link(first_doc.metadata["sponsors"]),
             )
             doc_contents = [
-                wrap_text(
-                    "[start_index={}] ".format(doc.metadata["start_index"]) +
-                    doc.page_content
-                ) for doc in doc_grp
+                "[start_index={}] ".format(doc.metadata["start_index"]) + doc.page_content
+                for doc in doc_grp
             ]
             with st.expander(ref):
-                st.text("\n\n...\n\n".join(doc_contents))
+                st.write(
+                    escape_markdown("\n\n...\n\n".join(doc_contents))
+                )
 
 
 
