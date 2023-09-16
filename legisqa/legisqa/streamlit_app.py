@@ -1,7 +1,6 @@
 from collections import defaultdict
 import json
 from pathlib import Path
-import textwrap
 
 import chromadb
 import streamlit as st
@@ -15,9 +14,6 @@ from langchain.prompts import PromptTemplate
 
 
 st.set_page_config(layout="wide")
-
-
-GGUF_PATH = Path("/home/galtay/data/gguf_models")
 
 
 template = """Use the following pieces of context from congressional legislation to answer the question at the end.
@@ -50,10 +46,8 @@ vectorstore = Chroma(
 
 st.title("LegisQA: Explore the Legislation of the 118th Congress")
 st.write(
-    """Pose inquiries regarding legislation authored by the 118th Congress in 2023
-Choose a model, pose an inquiry, and see a response.
-This application can be used to compare a number of private and open-source language models, using as a common basis the primary sources of bills proposed by the US Congress. some models require longer to run than others.
-Please see hyperdemocracy.us and join our upcoming sessions, where you can learn to code using LLMs and legislation, and exchange ideas on how democracy should change, looking ahead in this young millenium."""
+    """When you send a question to LegisQA, it will attempt to retrieve relevant content from the [118th United States Congress](https://en.wikipedia.org/wiki/118th_United_States_Congress), pass it to a [large language model (LLM)](https://en.wikipedia.org/wiki/Large_language_model), and generate an answer. This technique is known as Retrieval Augmented Generation (RAG) (see [here](https://research.ibm.com/blog/retrieval-augmented-generation-RAG) and [here](https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html)). The retrieved content will be available for inspection with links to the bills and sponsors.
+This technique helps to ground the LLM response by providing context from a trusted source, but it does not guarantee a high quality answer. We encourage you to play around. Try different models. Find questions that work and find questions that fail."""
 )
 
 
@@ -68,7 +62,7 @@ LLM_PROVIDERS_MODELS = {
         "google/flan-t5-large",
         "google/flan-t5-small",
     ],
-    "llamacpp": sorted(list(GGUF_PATH.glob("*.gguf"))),
+    "llamacpp": []
 }
 
 
@@ -81,99 +75,90 @@ def get_sponsor_link(sponsors):
 
 with st.sidebar:
 
-   n_ret_docs = st.slider(
-       'N retrieved chunks',
-       min_value=1,
-       max_value=40,
-       value=10,
-       step=1,
-   )
+    st.header("Learn about [hyperdemocracy](https://hyperdemocracy.us)")
 
-   llm_provider = st.selectbox(
-       label="llm provider",
-       options=LLM_PROVIDERS_MODELS.keys(),
-   )
+    with st.expander("LLM choices"):
 
-   llm_name = st.selectbox(
-       label="llm",
-       options=LLM_PROVIDERS_MODELS[llm_provider],
-   )
+        llm_provider = st.selectbox(
+            label="llm provider",
+            options=LLM_PROVIDERS_MODELS.keys(),
+        )
 
-   if llm_provider == "openai-chat":
-       temperature = st.slider(
-           'temperature',
-           min_value=0.0,
-           max_value=2.0,
-           value=0.0,
-           step=0.05
-       )
-       top_p = st.slider(
-           'top_p',
-           min_value=0.0,
-           max_value=1.0,
-           value=1.0,
-           step=0.05
-       )
+        if llm_provider == "llamacpp":
+            gguf_path = Path(st.text_input("gguf_path"))
+            gguf_files = sorted(list(gguf_path.glob("*.gguf")))
+            gguf_map = {gf.name: gf for gf in gguf_files}
+            llm_name_options = gguf_map.keys()
+        else:
+            llm_name_options = LLM_PROVIDERS_MODELS[llm_provider]
 
-   if llm_provider == "llamacpp":
-       n_ctx = st.slider(
-           'n_ctx',
-           min_value=512,
-           max_value=16384,
-           value=4096,
-           step=64
-       )
-       max_tokens = st.slider(
-           'max_tokens',
-           min_value=512,
-           max_value=16384,
-           value=512,
-           step=64
-       )
-       temperature = st.slider(
-           'temperature',
-           min_value=0.0,
-           max_value=1.5,
-           value=0.0,
-           step=0.05
-       )
-       top_p = st.slider(
-           'top_p',
-           min_value=0.0,
-           max_value=1.0,
-           value=1.0,
-           step=0.05
-       )
+        llm_name = st.selectbox(
+            label="llm",
+            options=llm_name_options,
+        )
 
+    with st.expander("Retrieval parameters"):
+
+        n_ret_docs = st.slider(
+            'Number of chunks to retrieve',
+            min_value=1,
+            max_value=40,
+            value=10,
+        )
+
+    with st.expander("Generative parameters"):
+
+        temperature = st.slider('temperature', min_value=0.0, max_value=2.0, value=0.0)
+        top_p = st.slider('top_p', min_value=0.0, max_value=1.0, value=1.0)
+
+        if llm_provider == "openai-chat":
+            llm = ChatOpenAI(model_name=llm_name, temperature=temperature)
+
+        elif llm_provider == "hfhub":
+            max_length = st.slider(
+                'max_tokens',
+                min_value=512,
+                max_value=16384,
+                value=512,
+                step=64
+            )
+            llm = HuggingFaceHub(
+                repo_id=llm_name, model_kwargs={"temperature": temperature, "max_length": max_length}
+            )
+
+        elif llm_provider == "llamacpp":
+            n_ctx = st.slider(
+                'n_ctx',
+                min_value=512,
+                max_value=16384,
+                value=4096,
+                step=64
+            )
+            max_tokens = st.slider(
+                'max_tokens',
+                min_value=512,
+                max_value=16384,
+                value=512,
+                step=64
+            )
+            llm = LlamaCpp(
+                model_path=str(gguf_map[llm_name]),
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p,
+                n_ctx=n_ctx,
+            )
+
+        else:
+            st.error(f"{llm_name=} not recognized")
+            st.stop()
 
 col1, col2 = st.columns(2)
 
 with col1:
 
     with st.form("my_form"):
-
         query = st.text_area('Enter question:')
-
-        if llm_provider == "openai-chat":
-            llm = ChatOpenAI(model_name=llm_name, temperature=0)
-
-        elif llm_provider == "hfhub":
-            llm = HuggingFaceHub(
-                repo_id=llm_name, model_kwargs={"temperature": 0.0, "max_length": 64}
-            )
-
-        elif llm_provider == "llamacpp":
-            llm = LlamaCpp(
-                model_path="/home/galtay/data/gguf_models/llama2-7b-chat-Q4_K_M.gguf",
-                temperature=temperature,
-                max_tokens=max_tokens,
-                top_p=top_p,
-                n_ctx=n_ctx,
-            )
-        else:
-            st.error(f"{llm_name=} not recognized")
-            st.stop()
-
         qa_chain = RetrievalQA.from_chain_type(
             llm,
             retriever=vectorstore.as_retriever(search_kwargs={"k": n_ret_docs}),
@@ -195,10 +180,6 @@ if submitted:
         st.info(escape_markdown(out["result"]))
 else:
     st.stop()
-
-
-def wrap_text(text):
-    return "\n".join(textwrap.wrap(text))
 
 
 with col2:
