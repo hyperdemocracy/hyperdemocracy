@@ -271,11 +271,12 @@ with col2:
 
     for parent_id, doc_grp in grpd_source_docs:
         first_doc = doc_grp[0]
-        ref = "{} chunks from {}\n\n[{}]({})\n\n{}".format(
+        ref = "{} chunks from {}\n\n{}\n\n[congress.gov]({}) | [govtrack.us]({})\n\n{}".format(
             len(doc_grp),
             first_doc.metadata["parent_id"],
             first_doc.metadata["title"],
             first_doc.metadata["congress_gov_url"],
+            first_doc.metadata["govtrack_url"],
             get_sponsor_link(first_doc.metadata["sponsors"]),
         )
         doc_contents = [
