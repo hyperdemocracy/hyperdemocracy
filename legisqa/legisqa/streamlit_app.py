@@ -243,7 +243,11 @@ else:
 
 
 with col1:
-    st.info(escape_markdown(out["result"]))
+    do_escape_markdown = st.checkbox("escape markdown in answer")
+    if do_escape_markdown:
+        st.info(escape_markdown(out["result"]))
+    else:
+        st.info(out["result"])
 
 with col2:
 
