@@ -17,6 +17,12 @@ import openai
 
 st.set_page_config(layout="wide")
 
+
+env_openai_api_key = os.getenv("OPENAI_API_KEY")
+env_hfhub_api_key = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+env_gguf_path = os.getenv("GGUF_PATH")
+
+
 LLM_PROVIDERS = ["openai-chat", "hfhub", "llamacpp"]
 OPENAI_CHAT_MODELS = [
     "gpt-3.5-turbo",
@@ -96,10 +102,13 @@ with st.sidebar:
             label="llm",
             options=llm_name_options,
         )
-        openai_api_key = st.text_input(
-            "Provide your OpenAI API key here (sk-...)",
-            type="password",
-        )
+        if env_openai_api_key is None:
+            openai_api_key = st.text_input(
+                "Provide your OpenAI API key here (sk-...)",
+                type="password",
+            )
+        else:
+            openai_api_key = env_openai_api_key
         if openai_api_key == "":
             st.stop()
 
@@ -108,16 +117,22 @@ with st.sidebar:
         llm_name = st.text_input(
             "Provide a HF model name (google/flan-t5-large)",
         )
-        hfhub_api_token = st.text_input(
-            "Provide your HF API token here (hf_...)",
-            type="password",
-        )
-        if hfhub_api_token == "":
+        if env_hfhub_api_key is None:
+            hfhub_api_token = st.text_input(
+                "Provide your HF API token here (hf_...)",
+                type="password",
+            )
+        else:
+            hfhub_api_token = env_hfhub_api_key
+        if hfhub_api_token == "" or llm_name == "":
             st.stop()
 
 
     elif llm_provider == "llamacpp":
-        gguf_path = st.text_input("Provide a path to *.gguf files")
+        if env_gguf_path is None:
+            gguf_path = st.text_input("Provide a path to *.gguf files")
+        else:
+            gguf_path = env_gguf_path
         if gguf_path == "":
             st.stop()
         else:
