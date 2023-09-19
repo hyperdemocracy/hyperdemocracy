@@ -317,7 +317,7 @@ with st.sidebar:
     }
     st.download_button(
         label="Download Results",
-        data = json.dumps(download_pack),
+        data = json.dumps(download_pack, indent=4),
         file_name='test.json',
         mime='text/json',
     )
