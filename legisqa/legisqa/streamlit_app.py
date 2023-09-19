@@ -318,6 +318,6 @@ with st.sidebar:
     st.download_button(
         label="Download Results",
         data = json.dumps(download_pack, indent=4),
-        file_name='test.json',
+        file_name='legisqa_output.json',
         mime='text/json',
     )
