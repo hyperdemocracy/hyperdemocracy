@@ -1,4 +1,5 @@
 from collections import defaultdict
+import datetime
 import json
 import os
 from pathlib import Path
@@ -302,3 +303,21 @@ with col2:
             st.write(
                 escape_markdown("\n\n...\n\n".join(doc_contents))
             )
+
+with st.sidebar:
+
+    download_pack = {
+        "llm_provider": llm_provider,
+        "llm_name": llm_name,
+        "query": query,
+        "prompt_template": prompt_template,
+        "out_result": out["result"],
+        "out_source_documents": [doc.dict() for doc in out["source_documents"]],
+        "time": datetime.datetime.now().isoformat(),
+    }
+    st.download_button(
+        label="Download Results",
+        data = json.dumps(download_pack, indent=4),
+        file_name='test.json',
+        mime='text/json',
+    )
