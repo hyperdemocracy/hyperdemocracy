@@ -25,7 +25,6 @@ flagembedding = "^1.0.7"
 
 [tool.poetry.group.dev.dependencies]
 huggingface-hub = "^0.16.4"
-congress = "^0.0a1.dev1"
 
 [build-system]
 requires = ["poetry-core"]

@@ -13,6 +13,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+torch = "^2.0.0"
+conda-lock = "^2.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.15.0"
