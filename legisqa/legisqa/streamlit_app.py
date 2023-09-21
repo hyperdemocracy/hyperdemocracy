@@ -13,6 +13,7 @@ from langchain import HuggingFaceHub
 from langchain.llms import LlamaCpp
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from langchain.chains.question_answering import load_qa_chain
 import openai
 
 
@@ -223,11 +224,10 @@ with st.sidebar:
 
 
 qa_chain_prompt = PromptTemplate.from_template(prompt_template)
-qa_chain = RetrievalQA.from_chain_type(
+qa_chain = load_qa_chain(
     llm,
-    retriever=vectorstore.as_retriever(search_kwargs={"k": n_ret_docs}),
-    chain_type_kwargs={"prompt": qa_chain_prompt},
-    return_source_documents=True,
+    chain_type="stuff",
+    prompt=qa_chain_prompt,
 )
 
 
@@ -237,6 +237,9 @@ with col1:
 
     with st.form("my_form"):
         query = st.text_area('Enter question:')
+        with st.expander("Filters"):
+            filter_bill_id = st.text_input("Bill ID (e.g. 118-S-2293)")
+#            filter_bio_id = st.text_input("Bio ID (e.g. R000595)")
         submitted = st.form_submit_button('Submit')
 
 
@@ -247,7 +250,26 @@ def escape_markdown(text):
     return text
 
 if submitted:
-    out = qa_chain({"query": query})
+
+    vs_filter = None
+    if filter_bill_id != "":
+        vs_filter = {"parent_id": filter_bill_id}
+
+    rdocs_and_scores = vectorstore.similarity_search_with_score(
+        query=query,
+        k=n_ret_docs,
+        filter=vs_filter,
+    )
+    rdocs = [el[0] for el in rdocs_and_scores]
+    rscores = [el[1] for el in rdocs_and_scores]
+
+    out = qa_chain(
+        {
+            "input_documents": rdocs,
+            "question": query,
+        },
+        return_only_outputs=False,
+    )
     st.session_state["out"] = out
 
 
@@ -261,15 +283,15 @@ else:
 with col1:
     do_escape_markdown = st.checkbox("escape markdown in answer")
     if do_escape_markdown:
-        st.info(escape_markdown(out["result"]))
+        st.info(escape_markdown(out["output_text"]))
     else:
-        st.info(out["result"])
+        st.info(out["output_text"])
 
 with col2:
 
     # group source documents
     grpd_source_docs = defaultdict(list)
-    for doc in out["source_documents"]:
+    for doc in out["input_documents"]:
         grpd_source_docs[doc.metadata["parent_id"]].append(doc)
 
     # sort chunks in each group by start index
@@ -311,8 +333,8 @@ with st.sidebar:
         "llm_name": llm_name,
         "query": query,
         "prompt_template": prompt_template,
-        "out_result": out["result"],
-        "out_source_documents": [doc.dict() for doc in out["source_documents"]],
+        "out_result": out["output_text"],
+        "out_source_documents": [doc.dict() for doc in out["input_documents"]],
         "time": datetime.datetime.now().isoformat(),
     }
     st.download_button(
