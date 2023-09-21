@@ -260,11 +260,12 @@ if submitted:
         k=n_ret_docs,
         filter=vs_filter,
     )
-    if len(rdocs_and_scores) == 0:
-        st.warning("No documents were retrieved. Please check the filters.")
     rdocs = [el[0] for el in rdocs_and_scores]
     rscores = [el[1] for el in rdocs_and_scores]
 
+    if len(rdocs_and_scores) == 0:
+        st.warning("No documents were retrieved. Please check the filters.")
+        st.stop()
 
     out = qa_chain(
         {
