@@ -22,11 +22,11 @@ In our case, `hyperdemocracy` is the core package that will be distributed on py
 Inspired by this [example](https://gerben-oostra.medium.com/python-poetry-mono-repo-without-limitations-dd63b47dc6b8)
 
 # Setup
-- if you have a virtual environment (conda, etc.) using 3.11, install poetry with `conda install poetry` or `pip install poetry`
-- otherwise, poetry will create a virtual environment for you (https://python-poetry.org/docs/master/managing-environments/)
-- To create all virtual environments run: `./scripts/install.sh`
+
+- Install dependencies with `./scripts/install.sh`, select whether or not you are using conda
 - To run a script `poetry run python yourscript.py`
 - To add a new package, from the root level of the repo, `poetry new yourpackagename`
+
 
 
 # Versioning
