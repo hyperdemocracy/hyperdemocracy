@@ -17,7 +17,7 @@ from langchain.chains.question_answering import load_qa_chain
 import openai
 
 
-st.set_page_config(layout="wide",page_title='LegisQA')
+st.set_page_config(layout="wide", page_title="LegisQA")
 
 
 env_openai_api_key = os.getenv("OPENAI_API_KEY")
