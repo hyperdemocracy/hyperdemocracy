@@ -85,7 +85,7 @@ https://conda.anaconda.org/conda-forge/linux-64/pyrsistent-0.19.3-py311h2582759_
 https://conda.anaconda.org/conda-forge/noarch/pysocks-1.7.1-pyha2e5f31_6.tar.bz2#2a7de29fb590ca14b5243c4c812c8025
 https://conda.anaconda.org/conda-forge/noarch/python-installer-0.7.0-pyhd8ed1ab_0.conda#65dea78f903d686c8b0c2feaf0e15e1f
 https://conda.anaconda.org/conda-forge/linux-64/ruamel.yaml.clib-0.2.7-py311h2582759_1.conda#5e997292429a22ad50c11af0a2cb0f08
-https://conda.anaconda.org/conda-forge/noarch/setuptools-68.1.2-pyhd8ed1ab_0.conda#4fe12573bf499ff85a0a364e00cc5c53
+https://conda.anaconda.org/conda-forge/noarch/setuptools-68.2.2-pyhd8ed1ab_0.conda#fc2166155db840c634a1291a5c35a709
 https://conda.anaconda.org/conda-forge/noarch/shellingham-1.5.3-pyhd8ed1ab_0.conda#83795060a5d8cd12b90a58bd62bc251e
 https://conda.anaconda.org/conda-forge/linux-64/tbb-2021.10.0-h00ab1b0_0.conda#9c82b1b389e46b64ec685ec487043e70
 https://conda.anaconda.org/conda-forge/noarch/tomli-2.0.1-pyhd8ed1ab_0.tar.bz2#5844808ffab9ebdb694585b50ba02a96
@@ -136,7 +136,7 @@ https://conda.anaconda.org/conda-forge/noarch/conda-package-handling-2.2.0-pyh38
 https://conda.anaconda.org/conda-forge/linux-64/dulwich-0.21.6-py311h459d7ec_0.conda#82e97a999a5020196e9d6a7420307d90
 https://conda.anaconda.org/conda-forge/linux-64/keyring-24.2.0-py311h38be061_0.conda#b8eedb6181eff2dfeb34182330db1240
 https://conda.anaconda.org/conda-forge/linux-64/numpy-1.25.2-py311h64a7726_0.conda#71fd6f1734a0fa64d8f852ae7156ec45
-https://conda.anaconda.org/conda-forge/linux-64/conda-23.7.3-py311h38be061_0.conda#e76cff0daef74eaccb8359523f5a871b
+https://conda.anaconda.org/conda-forge/linux-64/conda-23.7.4-py311h38be061_0.conda#4c02a041646b7e9f18f92c28749944ad
 https://conda.anaconda.org/conda-forge/linux-64/rapidfuzz-2.15.1-py311hcafe171_0.conda#41210a40a85d304877c464ae007136c5
 https://conda.anaconda.org/conda-forge/noarch/cleo-2.0.1-pyhd8ed1ab_0.conda#f1c5f2af6676cbe9206e191d1e70f661
 https://conda.anaconda.org/conda-forge/linux-64/mamba-1.5.1-py311h3072747_0.conda#7c32b9d89808602de4260492393443eb

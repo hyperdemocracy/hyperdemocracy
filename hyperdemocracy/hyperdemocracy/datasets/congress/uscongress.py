@@ -27,7 +27,7 @@ import logging
 import os
 from pathlib import Path
 import re
-from typing import Optional, Union
+from typing import Optional, Union, List, Generic
 
 from bs4 import BeautifulSoup
 from datasets import Dataset
@@ -37,9 +37,14 @@ from langchain.schema import Document
 import pandas as pd
 from pydantic import BaseModel
 import xmltodict
+import boto3
+from urllib.parse import urlparse
+import tempfile
+import re
+
+from hyperdemocracy.datasets.base import HyperdemocracyDataset
 
 from hyperdemocracy import langchain_helpers
-
 
 logger = logging.getLogger(__name__)
 
@@ -368,7 +373,8 @@ class BillMetadataXml:
             textVersions=self.text_versions(),
         )
 
-
+class TextVersionXml:
+    doctype: str
 
 def get_hf_row(metadata_path: Union[str, Path], base_text_path: Union[str, Path]):
 
@@ -607,7 +613,6 @@ def upload_file_to_hf(hf_org, dataset_name, local_path, repo_path, dryrun=True):
     )
 
 
-
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
@@ -625,3 +630,113 @@ if __name__ == "__main__":
     hf_dataset_name = "us-congress-bills"
     repo_path = "data" + "/" + local_path
     upload_file_to_hf(hf_org, hf_dataset_name, local_path, repo_path, dryrun=False)
+
+
+class USCongressDataset:
+    def __init__(self, logger=logging.basicConfig(level=logging.INFO), location=None, backend='local', max_rows=None):
+        self.name = 'congress'
+        self.logger = logger
+        self.backend = backend
+        self.location = location
+
+        self.base_congress = 118
+        self.max_rows = max_rows
+
+        self.model_map = {
+            rf'{self.location}/(?P<congress_num>\d+)/bills/.*/(?P<bill_name>[^/]+)/.*.xml$': BillMetadataXml,
+            rf'{self.location}/govinfo/(?P<doctype>BILLS|PLAW)/(?P<congress_num>\d+)/\d+/(?P<legistype>[a-zA-Z0-9]+)/(?P<text_version_name>[a-zA-Z]+[0-9]+)\w+\.xml$': TextVersionXml
+        }
+
+        # TODO: implement the base class
+        # super().__init__(location)
+
+    def from_location(self): 
+        if self.backend == 's3':
+            s3 = boto3.client('s3')
+            files = s3.list_objects(Bucket=self.location)
+            return self.from_files(files)
+
+    def from_files(self, filepaths: str):
+        """
+        filepaths: list of file path strings
+        returns: list of pydantic models that maps to the filepaths
+        """
+
+        models = []
+        for fp in filepaths:
+            cls, args = self._match_model(fp)
+            if cls is not None:
+                xml = self.fetch_xml(fp)
+                model_isntance = cls(xml)
+                model_pyd = model_isntance.as_pydantic()
+                models.append(model_pyd)
+
+        self.models = models
+        return self
+    
+    def to_pandas(self):
+        def dfs(root, dump):
+            for k, v in root:
+                if isinstance(v, BaseModel):
+                    dump[k] = dfs(v, {})
+                elif isinstance(v, list) and len(v) > 0 and isinstance(v[0], BaseModel):
+                    dump[k] = [dfs(vv, {}) for vv in v]
+                else:
+                    dump[k] = v
+            return dump
+    
+        return pd.DataFrame([dfs(m, {}) for m in self.models])
+
+        # TODO: when we can bump to pydantic > 2, we can just use this 
+        # return [m.model_dump() for m in self.models]
+
+
+    def _match_model(self, filepath):
+        for pattern, cls in self.model_map.items():
+            match = re.search(pattern, filepath)
+            if match:
+                args = match.groupdict()  # This will get a dictionary of named capture groups
+                return cls, args
+            else:
+                return None, None 
+    
+    def fetch_xml(self, file):
+        s3uri = urlparse(file)
+        s3 = boto3.client('s3')
+
+        with tempfile.TemporaryFile(mode='w+b') as f:
+            s3.download_fileobj(s3uri.netloc, s3uri.path.lstrip('/'), f)
+            f.seek(0)
+            xml = f.read()
+            return xml
+
+    def get_dataframe(self):
+        logger.info(f"writing hf parquet with {base_data_path=} and {base_congress=}")
+        base_text_path = base_data_path / "data" / "govinfo"
+        metadata_paths = sorted(list((base_data_path / "data" / str(base_congress) / "bills").glob("*/*/*.xml")))
+        logger.info(f"found {len(metadata_paths)} bill metadata files")
+
+        if max_rows is not None and max_rows < len(metadata_paths):
+            logger.info(f"restricting file list to {max_rows} entries")
+            metadata_paths = metadata_paths[:max_rows]
+
+        stats = {
+            "no_tvs": 0,
+            "no_url": 0,
+            "no_file": 0,
+            "ok": 0,
+        }
+
+        bill_types = Counter()
+        bill_versions = Counter()
+
+        rows = []
+        for metadata_path in metadata_paths:
+            row, stats_key = get_hf_row(metadata_path, base_text_path)
+            stats[stats_key] += 1
+            rows.append(row)
+
+        logging.info(f"{stats=}")
+
+        df = pd.DataFrame(rows)
+        return df

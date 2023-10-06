@@ -332,6 +332,43 @@ tests = ["attrs[tests-no-zope]", "zope-interface"]
 tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
 
 [[package]]
+name = "awswrangler"
+version = "3.4.0"
+description = "Pandas on AWS."
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "awswrangler-3.4.0-py3-none-any.whl", hash = "sha256:9fb10d8bea5b1e500ba17c930638eeca074b628a128e201b5774f1a9c0db831b"},
+    {file = "awswrangler-3.4.0.tar.gz", hash = "sha256:0cd15ce0d5bad4e001f687af312054199b3245a4b7d9504b375962f77bca79e4"},
+]
+
+[package.dependencies]
+boto3 = ">=1.20.32,<2.0.0"
+botocore = ">=1.23.32,<2.0.0"
+numpy = ">=1.18,<2.0"
+packaging = ">=21.1,<24.0"
+pandas = ">=1.2.0,<3.0.0"
+pyarrow = ">=7.0.0"
+typing-extensions = ">=4.4.0,<5.0.0"
+
+[package.extras]
+deltalake = ["deltalake (>=0.6.4,<0.11.0)"]
+geopandas = ["geopandas (>=0.13.2,<0.14.0)"]
+gremlin = ["gremlinpython (>=3.6.2,<4.0.0)", "requests (>=2.0.0,<3.0.0)"]
+modin = ["modin (>=0.23.0,<0.24.0)"]
+mysql = ["pymysql (>=1.0.0,<2.0.0)"]
+opencypher = ["requests (>=2.0.0,<3.0.0)"]
+openpyxl = ["openpyxl (>=3.0.0,<4.0.0)"]
+opensearch = ["jsonpath-ng (>=1.5.3,<2.0.0)", "opensearch-py (>=2.0.0,<3.0.0)", "requests-aws4auth (>=1.1.1,<2.0.0)"]
+oracle = ["oracledb (>=1.0.0,<2.0.0)"]
+postgres = ["pg8000 (>=1.29.0,<2.0.0)"]
+progressbar = ["progressbar2 (>=4.0.0,<5.0.0)"]
+ray = ["ray[data,default] (>=2.0.0,<2.7.0)"]
+redshift = ["redshift-connector (>=2.0.0,<3.0.0)"]
+sparql = ["SPARQLWrapper (>=2.0.0,<3.0.0)", "requests (>=2.0.0,<3.0.0)"]
+sqlserver = ["pyodbc (>=4.0.0,<5.0.0)"]
+
+[[package]]
 name = "backoff"
 version = "2.2.1"
 description = "Function decoration for backoff and retry"
@@ -803,17 +840,6 @@ sdist = ["build"]
 ssh = ["bcrypt (>=3.1.5)"]
 test = ["pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-xdist"]
 test-randomorder = ["pytest-randomly"]
-
-[[package]]
-name = "cssselect"
-version = "1.2.0"
-description = "cssselect parses CSS3 Selectors and translates them to XPath 1.0"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "cssselect-1.2.0-py2.py3-none-any.whl", hash = "sha256:da1885f0c10b60c03ed5eccbb6b68d6eff248d91976fcde348f395d54c9fd35e"},
-    {file = "cssselect-1.2.0.tar.gz", hash = "sha256:666b19839cfaddb9ce9d36bfe4c969132c647b92fc9088c4e23f786b30f1b3dc"},
-]
 
 [[package]]
 name = "dataclasses-json"
@@ -1305,27 +1331,6 @@ files = [
 ]
 
 [[package]]
-name = "html5lib"
-version = "1.1"
-description = "HTML parser based on the WHATWG HTML specification"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-files = [
-    {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
-    {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
-]
-
-[package.dependencies]
-six = ">=1.9"
-webencodings = "*"
-
-[package.extras]
-all = ["chardet (>=2.2)", "genshi", "lxml"]
-chardet = ["chardet (>=2.2)"]
-genshi = ["genshi"]
-lxml = ["lxml"]
-
-[[package]]
 name = "httpcore"
 version = "0.18.0"
 description = "A minimal low-level HTTP client."
@@ -1419,13 +1424,13 @@ socks = ["socksio (==1.*)"]
 
 [[package]]
 name = "huggingface-hub"
-version = "0.16.4"
+version = "0.17.3"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 optional = false
-python-versions = ">=3.7.0"
+python-versions = ">=3.8.0"
 files = [
-    {file = "huggingface_hub-0.16.4-py3-none-any.whl", hash = "sha256:0d3df29932f334fead024afc7cb4cc5149d955238b8b5e42dcf9740d6995a349"},
-    {file = "huggingface_hub-0.16.4.tar.gz", hash = "sha256:608c7d4f3d368b326d1747f91523dbd1f692871e8e2e7a4750314a2dd8b63e14"},
+    {file = "huggingface_hub-0.17.3-py3-none-any.whl", hash = "sha256:545eb3665f6ac587add946e73984148f2ea5c7877eac2e845549730570c1933a"},
+    {file = "huggingface_hub-0.17.3.tar.gz", hash = "sha256:40439632b211311f788964602bf8b0d9d6b7a2314fba4e8d67b2ce3ecea0e3fd"},
 ]
 
 [package.dependencies]
@@ -1438,16 +1443,17 @@ tqdm = ">=4.42.1"
 typing-extensions = ">=3.7.4.3"
 
 [package.extras]
-all = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "aiohttp", "black (>=23.1,<24.0)", "gradio", "jedi", "mypy (==0.982)", "numpy", "pydantic", "pytest", "pytest-asyncio", "pytest-cov", "pytest-env", "pytest-vcr", "pytest-xdist", "ruff (>=0.0.241)", "soundfile", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3", "urllib3 (<2.0)"]
+all = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "aiohttp", "black (==23.7)", "gradio", "jedi", "mypy (==1.5.1)", "numpy", "pydantic (<2.0)", "pytest", "pytest-asyncio", "pytest-cov", "pytest-env", "pytest-vcr", "pytest-xdist", "ruff (>=0.0.241)", "soundfile", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3", "urllib3 (<2.0)"]
 cli = ["InquirerPy (==0.3.4)"]
-dev = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "aiohttp", "black (>=23.1,<24.0)", "gradio", "jedi", "mypy (==0.982)", "numpy", "pydantic", "pytest", "pytest-asyncio", "pytest-cov", "pytest-env", "pytest-vcr", "pytest-xdist", "ruff (>=0.0.241)", "soundfile", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3", "urllib3 (<2.0)"]
+dev = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "aiohttp", "black (==23.7)", "gradio", "jedi", "mypy (==1.5.1)", "numpy", "pydantic (<2.0)", "pytest", "pytest-asyncio", "pytest-cov", "pytest-env", "pytest-vcr", "pytest-xdist", "ruff (>=0.0.241)", "soundfile", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3", "urllib3 (<2.0)"]
+docs = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "aiohttp", "black (==23.7)", "gradio", "hf-doc-builder", "jedi", "mypy (==1.5.1)", "numpy", "pydantic (<2.0)", "pytest", "pytest-asyncio", "pytest-cov", "pytest-env", "pytest-vcr", "pytest-xdist", "ruff (>=0.0.241)", "soundfile", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3", "urllib3 (<2.0)", "watchdog"]
 fastai = ["fastai (>=2.4)", "fastcore (>=1.3.27)", "toml"]
-inference = ["aiohttp", "pydantic"]
-quality = ["black (>=23.1,<24.0)", "mypy (==0.982)", "ruff (>=0.0.241)"]
+inference = ["aiohttp", "pydantic (<2.0)"]
+quality = ["black (==23.7)", "mypy (==1.5.1)", "ruff (>=0.0.241)"]
 tensorflow = ["graphviz", "pydot", "tensorflow"]
-testing = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "aiohttp", "gradio", "jedi", "numpy", "pydantic", "pytest", "pytest-asyncio", "pytest-cov", "pytest-env", "pytest-vcr", "pytest-xdist", "soundfile", "urllib3 (<2.0)"]
+testing = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "aiohttp", "gradio", "jedi", "numpy", "pydantic (<2.0)", "pytest", "pytest-asyncio", "pytest-cov", "pytest-env", "pytest-vcr", "pytest-xdist", "soundfile", "urllib3 (<2.0)"]
 torch = ["torch"]
-typing = ["pydantic", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
+typing = ["pydantic (<2.0)", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
 
 [[package]]
 name = "humanfriendly"
@@ -1462,6 +1468,37 @@ files = [
 
 [package.dependencies]
 pyreadline3 = {version = "*", markers = "sys_platform == \"win32\" and python_version >= \"3.8\""}
+
+[[package]]
+name = "hyperdemocracy"
+version = "0.1.0"
+description = "core python client package for distribution and re-use"
+optional = false
+python-versions = "^3.11"
+files = []
+develop = true
+
+[package.dependencies]
+beautifulsoup4 = "^4.12.2"
+boto3 = "^1.28.51"
+chromadb = "^0.4.9"
+datasets = "^2.14.5"
+deltalake = "^0.10.2"
+flagembedding = "^1.0.7"
+lancedb = "^0.2.2"
+langchain = "^0.0.285"
+lxml = "^4.9.3"
+openai = "^0.28.0"
+pandas = "^2.1.0"
+prefect-shell = "^0.1.5"
+pydantic = ">=1.9, <2.0"
+sentence-transformers = "^2.2.2"
+torch = "^2.0.0"
+xmltodict = "^0.13.0"
+
+[package.source]
+type = "directory"
+url = "../hyperdemocracy"
 
 [[package]]
 name = "hyperframe"
@@ -1499,17 +1536,6 @@ files = [
 [package.extras]
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (<7.2.5)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy (>=0.9.1)", "pytest-ruff", "zipp (>=3.17)"]
-
-[[package]]
-name = "iso8601"
-version = "2.0.0"
-description = "Simple module to parse ISO 8601 dates"
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "iso8601-2.0.0-py3-none-any.whl", hash = "sha256:ebe10061b932edb8a8e33cc635d661926c59b9c3bed7a4f4edca8c62d400af10"},
-    {file = "iso8601-2.0.0.tar.gz", hash = "sha256:739960d37c74c77bd9bd546a76562ccb581fe3d4820ff5c3141eb49c839fda8f"},
-]
 
 [[package]]
 name = "jinja2"
@@ -1987,41 +2013,6 @@ files = [
 ]
 
 [[package]]
-name = "mechanize"
-version = "0.4.8"
-description = "Stateful, programmatic web browsing"
-optional = false
-python-versions = "*"
-files = [
-    {file = "mechanize-0.4.8-py2.py3-none-any.whl", hash = "sha256:961fd171b5eb37a7578fce62ba81ba85803dff3c5ba4ac24f6f569ae27198439"},
-    {file = "mechanize-0.4.8.tar.gz", hash = "sha256:5e86ac0777357e006eb04cd28f7ed9f811d48dffa603d3891ac6d2b92280dc91"},
-]
-
-[package.dependencies]
-html5lib = ">=0.999999999"
-
-[package.extras]
-binarytest = ["html5-parser", "lxml"]
-fast = ["html5-parser (>=0.4.4)"]
-test = ["html5lib", "service-identity", "six", "twisted"]
-
-[[package]]
-name = "mock"
-version = "5.1.0"
-description = "Rolling backport of unittest.mock for all Pythons"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "mock-5.1.0-py3-none-any.whl", hash = "sha256:18c694e5ae8a208cdb3d2c20a993ca1a7b0efa258c247a1e565150f477f83744"},
-    {file = "mock-5.1.0.tar.gz", hash = "sha256:5e96aad5ccda4718e0a229ed94b2024df75cc2d55575ba5762d31f5767b8767d"},
-]
-
-[package.extras]
-build = ["blurb", "twine", "wheel"]
-docs = ["sphinx"]
-test = ["pytest", "pytest-cov"]
-
-[[package]]
 name = "monotonic"
 version = "1.6"
 description = "An implementation of time.monotonic() for Python 2 & < 3.3"
@@ -2159,6 +2150,34 @@ files = [
 
 [package.dependencies]
 dill = ">=0.3.7"
+
+[[package]]
+name = "mypy-boto3-s3"
+version = "1.28.52"
+description = "Type annotations for boto3.S3 1.28.52 service generated with mypy-boto3-builder 7.19.0"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mypy-boto3-s3-1.28.52.tar.gz", hash = "sha256:179cb7542cc5ef656f1323ad51eb237afcba77d1e5ed07d21a013fe36effb8b2"},
+    {file = "mypy_boto3_s3-1.28.52-py3-none-any.whl", hash = "sha256:a75cd5ff28f1cb5109dd50db94259436701208fa97c61b5a2cc0689e169b7cba"},
+]
+
+[package.dependencies]
+typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.12\""}
+
+[[package]]
+name = "mypy-boto3-secretsmanager"
+version = "1.28.36"
+description = "Type annotations for boto3.SecretsManager 1.28.36 service generated with mypy-boto3-builder 7.18.0"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mypy-boto3-secretsmanager-1.28.36.tar.gz", hash = "sha256:7e390887d35bd3708d8c0ce9409525dad08053ea8da5fd047f72ec7bcf093fd3"},
+    {file = "mypy_boto3_secretsmanager-1.28.36-py3-none-any.whl", hash = "sha256:0b3706a36bea1889fe70f93e7aed68ea5d39e0c727643ab8282ac03391e17a00"},
+]
+
+[package.dependencies]
+typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.12\""}
 
 [[package]]
 name = "mypy-extensions"
@@ -2770,6 +2789,28 @@ websockets = ">=10.4"
 
 [package.extras]
 dev = ["cairosvg", "flaky", "ipython", "ipython (==8.12.*)", "jinja2", "mike", "mkdocs", "mkdocs-gen-files", "mkdocs-material", "mkdocstrings-python", "mock", "moto", "mypy", "numpy", "pillow", "pre-commit", "pytest (>7)", "pytest-asyncio (>=0.18.2)", "pytest-benchmark", "pytest-cov", "pytest-env", "pytest-flakefinder", "pytest-timeout", "pytest-xdist", "pytkdocs (>=0.14.2)", "pyyaml", "requests", "respx", "ruff", "setuptools (!=60.9.0)", "virtualenv", "watchfiles"]
+
+[[package]]
+name = "prefect-aws"
+version = "0.3.7"
+description = "Prefect collection of tasks and subflows to integrate with AWS"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "prefect-aws-0.3.7.tar.gz", hash = "sha256:e384395f16f7fe76dca6d3f97ed1f360d94b10891ad58d5bf5220b952e0713ae"},
+    {file = "prefect_aws-0.3.7-py3-none-any.whl", hash = "sha256:5fabbe327153b3ab9f2dcf9a8f4128e67eaaa8cbce0dd3dfaf94a6d0a9a3971d"},
+]
+
+[package.dependencies]
+boto3 = ">=1.24.53"
+botocore = ">=1.27.53"
+mypy-boto3-s3 = ">=1.24.94"
+mypy-boto3-secretsmanager = ">=1.26.49"
+prefect = ">=2.10.11"
+tenacity = ">=8.0.0"
+
+[package.extras]
+dev = ["black", "boto3-stubs (>=1.24.39)", "coverage", "flake8", "interrogate", "isort", "mkdocs", "mkdocs-gen-files", "mkdocs-material", "mkdocstrings-python-legacy", "mock", "moto (>=3.1.16)", "mypy", "pillow", "pre-commit", "pytest", "pytest-asyncio", "pytest-lazy-fixture", "pytest-xdist", "types-boto3 (>=1.0.2)"]
 
 [[package]]
 name = "prefect-shell"
@@ -3557,20 +3598,6 @@ files = [
 pyasn1 = ">=0.1.3"
 
 [[package]]
-name = "rtyaml"
-version = "1.0.0"
-description = "All the annoying things to make YAML usable in a source controlled environment."
-optional = false
-python-versions = "*"
-files = [
-    {file = "rtyaml-1.0.0-py2.py3-none-any.whl", hash = "sha256:589129e75ecb2ba0def3dcc094bb462f68faed48e42a8fa0fcf4a9d6119fd725"},
-    {file = "rtyaml-1.0.0.tar.gz", hash = "sha256:66aa6e2f2c8c29ccab9d1713072a4e06c52c6cdcfe27ebd50706df09638c4586"},
-]
-
-[package.dependencies]
-pyyaml = "*"
-
-[[package]]
 name = "ruamel-yaml"
 version = "0.17.32"
 description = "ruamel.yaml is a YAML parser/emitter that supports roundtrip preservation of comments, seq/map flow style, and map key order"
@@ -3809,21 +3836,6 @@ numpy = ">=1.18.5,<1.26.0"
 dev = ["flake8", "mypy", "pycodestyle", "typing_extensions"]
 doc = ["matplotlib (>2)", "numpydoc", "pydata-sphinx-theme (==0.9.0)", "sphinx (!=4.1.0)", "sphinx-panels (>=0.5.2)", "sphinx-tabs"]
 test = ["asv", "gmpy2", "mpmath", "pytest", "pytest-cov", "pytest-xdist", "scikit-umfpack", "threadpoolctl"]
-
-[[package]]
-name = "scrapelib"
-version = "2.2.0"
-description = ""
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "scrapelib-2.2.0-py3-none-any.whl", hash = "sha256:ae663b620ddc568736ac09a4162cf61921fe7c7d1d00e44e7bc2d0d98b3551f9"},
-    {file = "scrapelib-2.2.0.tar.gz", hash = "sha256:2f71c6e46c1ba0e110973671a5fa4cded0551101526319108c51f86eed75718c"},
-]
-
-[package.dependencies]
-requests = {version = ">=2.28.1,<3.0.0", extras = ["security"]}
-urllib3 = ">=1.26,<2.0"
 
 [[package]]
 name = "semver"
@@ -4413,36 +4425,6 @@ tzdata = {version = "*", markers = "platform_system == \"Windows\""}
 devenv = ["black", "check-manifest", "flake8", "pyroma", "pytest (>=4.3)", "pytest-cov", "pytest-mock (>=3.3)", "zest.releaser"]
 
 [[package]]
-name = "united-states-congress"
-version = "0.0.1"
-description = "Public domain data collectors for the work of Congress, including legislation, amendments, and votes."
-optional = false
-python-versions = "*"
-files = []
-develop = false
-
-[package.dependencies]
-beautifulsoup4 = "*"
-cssselect = "*"
-iso8601 = "*"
-lxml = "*"
-mechanize = "*"
-mock = "*"
-packaging = "*"
-python-dateutil = "*"
-pytz = "*"
-pyyaml = "*"
-rtyaml = "*"
-scrapelib = "*"
-xmltodict = "*"
-
-[package.source]
-type = "git"
-url = "https://github.com/hyperdemocracy/congress.git"
-reference = "HEAD"
-resolved_reference = "f8dfafcecfbf30084c23a40db9662ecf37df7c7e"
-
-[[package]]
 name = "urllib3"
 version = "1.26.16"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -4560,17 +4542,6 @@ files = [
 
 [package.dependencies]
 anyio = ">=3.0.0"
-
-[[package]]
-name = "webencodings"
-version = "0.5.1"
-description = "Character encoding aliases for legacy web content"
-optional = false
-python-versions = "*"
-files = [
-    {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
-    {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
-]
 
 [[package]]
 name = "websocket-client"
@@ -4862,4 +4833,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1c4838b04b97dab03e75a25efa875f8489e7f719bdf2a7e34e50c6ebb583cef5"
+content-hash = "7ffafcc0452bb2aac4a41cda6a9312387c8861812aadac9bc70a71c4b8a0200a"

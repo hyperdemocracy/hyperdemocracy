@@ -1,3 +1,3 @@
 #!/bin/sh
 
-PROJECTS='hyperdemocracy legisqa'
+PROJECTS='hyperdemocracy legisqa pipeline'

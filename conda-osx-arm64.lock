@@ -72,7 +72,7 @@ https://conda.anaconda.org/conda-forge/osx-arm64/pyrsistent-0.19.3-py311he2be06e
 https://conda.anaconda.org/conda-forge/noarch/pysocks-1.7.1-pyha2e5f31_6.tar.bz2#2a7de29fb590ca14b5243c4c812c8025
 https://conda.anaconda.org/conda-forge/noarch/python-installer-0.7.0-pyhd8ed1ab_0.conda#65dea78f903d686c8b0c2feaf0e15e1f
 https://conda.anaconda.org/conda-forge/osx-arm64/ruamel.yaml.clib-0.2.7-py311he2be06e_1.conda#693e8b069d8b9dac3900d78ae86d79e4
-https://conda.anaconda.org/conda-forge/noarch/setuptools-68.1.2-pyhd8ed1ab_0.conda#4fe12573bf499ff85a0a364e00cc5c53
+https://conda.anaconda.org/conda-forge/noarch/setuptools-68.2.2-pyhd8ed1ab_0.conda#fc2166155db840c634a1291a5c35a709
 https://conda.anaconda.org/conda-forge/noarch/shellingham-1.5.3-pyhd8ed1ab_0.conda#83795060a5d8cd12b90a58bd62bc251e
 https://conda.anaconda.org/conda-forge/noarch/tomli-2.0.1-pyhd8ed1ab_0.tar.bz2#5844808ffab9ebdb694585b50ba02a96
 https://conda.anaconda.org/conda-forge/noarch/tomlkit-0.12.1-pyha770c72_0.conda#62f5b331c53d73e2f6c4c130b53518a0
@@ -123,6 +123,6 @@ https://conda.anaconda.org/conda-forge/noarch/conda-package-handling-2.2.0-pyh38
 https://conda.anaconda.org/conda-forge/osx-arm64/dulwich-0.21.6-py311heffc1b2_0.conda#b513ad30524964675d27df05ab30eec7
 https://conda.anaconda.org/conda-forge/osx-arm64/rapidfuzz-2.15.1-py311ha397e9f_0.conda#ead77bde8553c8387e95cac89e215f93
 https://conda.anaconda.org/conda-forge/noarch/cleo-2.0.1-pyhd8ed1ab_0.conda#f1c5f2af6676cbe9206e191d1e70f661
-https://conda.anaconda.org/conda-forge/osx-arm64/conda-23.7.3-py311h267d04e_0.conda#cadd707aaca7df03463604c3bb7616a2
+https://conda.anaconda.org/conda-forge/osx-arm64/conda-23.7.4-py311h267d04e_0.conda#7ed908700a282db6e7819656ce83caf0
 https://conda.anaconda.org/conda-forge/osx-arm64/mamba-1.5.1-py311hb045da1_0.conda#22e9b21485858952c40cab88ed7965f2
 https://conda.anaconda.org/conda-forge/noarch/poetry-1.6.1-osx_pyh534df25_0.conda#b90f6dda7d0ab2e579679f8f5225f042

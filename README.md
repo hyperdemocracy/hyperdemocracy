@@ -1,5 +1,15 @@
 # hyperdemocracy
+
 Hyperdemocracy
+
+Tool for creating LLM applications using multiple different government datasets.
+
+## Features
+
+- Maintained public datasets of lots of awesome government sources
+- Data pipeline for loading, integrating, and running inference on government datasets
+- Web UI for exploring and visualizing data
+- Python client library for integrating hyperdemocracy in your own applications
 
 
 ## Pre-requisites

@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "pipeline"
+version = "0.1.0"
+description = ""
+authors = ["Forrest Murray <fmurray@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+lancedb = "^0.2.2"
+httpx = "^0.25.0"
+prefect = "^2.13.0"
+pandas = "^2.1.0"
+prefect-shell = "^0.1.5"
+awswrangler = "^3.4.0"
+prefect-aws = "^0.3.7"
+hyperdemocracy = {path="../hyperdemocracy", develop=true}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
