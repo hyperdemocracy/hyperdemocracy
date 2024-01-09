@@ -245,7 +245,8 @@ with st.sidebar:
             max_length = st.slider(
                 'max_tokens',
                 min_value=512,
-                max_value=16384,                    value=512,
+                max_value=16384,                    
+                value=512,
                 step=64
             )  # The user can select the maximum number of tokens using the slider
 
