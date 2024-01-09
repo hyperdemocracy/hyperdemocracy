@@ -67,7 +67,6 @@ def load_vectorstore():
         persist_directory="chroma.db",
         client=chroma_client,
     )  # The vector store is created with the specified collection name, embedding function, persist directory, and client
-    # Return the vector store
     return vectorstore  # The vector store is returned for further use
 
 # Function to generate a link to the sponsor's bio
