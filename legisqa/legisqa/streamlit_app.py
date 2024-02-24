@@ -99,7 +99,7 @@ Helpful Answer:"""
 st.title(":classical_building: LegisQA :computer:")
 st.header("Explore Congressional Legislation")
 st.write(
-    """When you send a question to LegisQA, it will attempt to retrieve relevant content from the [118th United States Congress](https://en.wikipedia.org/wiki/118th_United_States_Congress), pass it to a [large language model (LLM)](https://en.wikipedia.org/wiki/Large_language_model), and generate an answer. This technique is known as Retrieval Augmented Generation (RAG). You can read the [original paper](https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html) or a [recent summary](https://research.ibm.com/blog/retrieval-augmented-generation-RAG) to get more details. Once the answer is generated, the retrieved content will be available for inspection with links to the bills and sponsors.
+    """When you send a question to LegisQA, it will attempt to retrieve relevant content from the past six congresses ([113th-118th covering 2013 to the present](https://en.wikipedia.org/wiki/List_of_United_States_Congresses)), pass it to a [large language model (LLM)](https://en.wikipedia.org/wiki/Large_language_model), and generate an answer. This technique is known as Retrieval Augmented Generation (RAG). You can read the [original paper](https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html) or a [recent summary](https://research.ibm.com/blog/retrieval-augmented-generation-RAG) to get more details. Once the answer is generated, the retrieved content will be available for inspection with links to the bills and sponsors.
 This technique helps to ground the LLM response by providing context from a trusted source, but it does not guarantee a high quality answer. We encourage you to play around. Try different models. Find questions that work and find questions that fail."""
 )
 
@@ -110,6 +110,7 @@ with st.sidebar:
     st.subheader(
         ":world_map: Visualize with [nomic atlas](https://atlas.nomic.ai/data/gabrielhyperdemocracy/us-congressional-legislation-s1024o256nomic/map)"
     )
+    st.subheader(":hugging_face: Explore the datasets in [huggingface](https://huggingface.co/hyperdemocracy)")
 
     st.divider()
 
