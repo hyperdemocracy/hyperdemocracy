@@ -110,7 +110,7 @@ with st.sidebar:
     st.subheader(
         ":world_map: Visualize with [nomic atlas](https://atlas.nomic.ai/data/gabrielhyperdemocracy/us-congressional-legislation-s1024o256nomic/map)"
     )
-    st.subheader(":hugging_face: Explore the datasets in [huggingface](https://huggingface.co/hyperdemocracy)")
+    st.subheader(":hugging_face: Explore the [huggingface datasets](https://huggingface.co/hyperdemocracy)")
 
     st.divider()
 
