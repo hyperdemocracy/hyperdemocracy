@@ -6,16 +6,22 @@ from pathlib import Path
 
 import chromadb
 import streamlit as st
+import openai
+from pinecone import Pinecone as PineconeClient
+
+from langchain_core.runnables import RunnableParallel
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import Chroma
-
-from langchain_openai import ChatOpenAI
+from langchain_community.vectorstores import Pinecone
 from langchain_community.llms import HuggingFaceHub
 from langchain_community.llms import LlamaCpp
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
-import openai
+
 
 
 st.set_page_config(layout="wide", page_title="LegisQA")
@@ -25,6 +31,7 @@ env_openai_api_key = os.getenv("LEGISQA_OPENAI_API_KEY")
 env_hfhub_api_key = os.getenv("LEGISQA_HUGGINGFACEHUB_API_TOKEN")
 env_gguf_path = os.getenv("LEGISQA_GGUF_PATH")
 env_chroma_path = os.getenv("LEGISQA_CHROMA_PATH")
+env_pinecone_api_key = os.getenv("LEGISQA_PINECONE_API_KEY")
 
 
 CONGRESS_GOV_TYPE_MAP = {
@@ -39,19 +46,15 @@ CONGRESS_GOV_TYPE_MAP = {
 }
 
 
-LLM_PROVIDERS = ["openai-chat", "hfhub", "llamacpp"]
+LLM_PROVIDERS = ["openai", "hfhub", "llamacpp"]
 OPENAI_CHAT_MODELS = [
     "gpt-3.5-turbo-0125",
     "gpt-4-0125-preview",
 ]
 
 
-def load_vectorstore():
+def load_chroma_vectorstore():
     model_name = "BAAI/bge-small-en-v1.5"
-    collection_name = "usc-113-to-118-vecs-v1-s1024-o256-BAAI-bge-small-en-v1.5"
-
-    chroma_client = chromadb.PersistentClient(path=env_chroma_path)
-    collection = chroma_client.get_collection(name=collection_name)
     model_kwargs = {"device": "cpu"}
     encode_kwargs = {"normalize_embeddings": True}
     emb_fn = HuggingFaceBgeEmbeddings(
@@ -60,6 +63,10 @@ def load_vectorstore():
         encode_kwargs=encode_kwargs,
         query_instruction="Represent this question for searching relevant passages: ",
     )
+
+    collection_name = "usc-113-to-118-vecs-v1-s1024-o256-BAAI-bge-small-en-v1.5"
+    chroma_client = chromadb.PersistentClient(path=env_chroma_path)
+    collection = chroma_client.get_collection(name=collection_name)
     vectorstore = Chroma(
         client=chroma_client,
         collection_name=collection_name,
@@ -68,10 +75,32 @@ def load_vectorstore():
     return vectorstore
 
 
-def get_sponsor_link(anchor_text, bioguide_id):
-    base_url = "https://bioguide.congress.gov/search/bio"
-    url = "{}/{}".format(base_url, bioguide_id)
-    return "[{}]({})".format(anchor_text, url)
+def load_pinecone_vectorstore():
+    model_name = "BAAI/bge-small-en-v1.5"
+    model_kwargs = {"device": "cpu"}
+    encode_kwargs = {"normalize_embeddings": True}
+    emb_fn = HuggingFaceBgeEmbeddings(
+        model_name=model_name,
+        model_kwargs=model_kwargs,
+        encode_kwargs=encode_kwargs,
+        query_instruction="Represent this question for searching relevant passages: ",
+    )
+
+    index_name = "usc-113to118-s1024-o256-bge-small-en-v1p5"
+    pinecone = PineconeClient(
+        api_key=env_pinecone_api_key,
+#        environment=PINECONE_ENVIRONMENT,
+    )
+    vectorstore = Pinecone.from_existing_index(
+        index_name=index_name,
+        embedding=emb_fn,
+    )
+
+    return vectorstore
+
+
+def get_sponsor_url(bioguide_id):
+    return f"https://bioguide.congress.gov/search/bio/{bioguide_id}"
 
 
 def get_congress_gov_url(congress_num, legis_type, legis_num):
@@ -85,10 +114,11 @@ def get_govtrack_url(congress_num, legis_type, legis_num):
     )
 
 
-vectorstore = load_vectorstore()
+#vectorstore = load_chroma_vectorstore()
+vectorstore = load_pinecone_vectorstore()
 
 
-DEFAULT_PROMPT_TEMPLATE = """Use the following pieces of context from congressional legislation to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+DEFAULT_PROMPT_TEMPLATE = """Use the following snippets from congressional legislation to answer the question at the end. Each snippet header contains a snippet_num index, a unique legis_id, the title of the legislation, and a short text snippet. When answering the question, refer to the legis_id and title in snippets that are useful for answering the question. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
 {context}
 
@@ -114,63 +144,65 @@ with st.sidebar:
 
     st.divider()
 
-    llm_provider = st.selectbox(
-        label="llm provider",
-        options=LLM_PROVIDERS,
-    )
+    with st.container(border=True):
 
-    if llm_provider == "openai-chat":
-        llm_name_options = OPENAI_CHAT_MODELS
-        llm_name = st.selectbox(
-            label="llm",
-            options=llm_name_options,
+        llm_provider = st.selectbox(
+            label="llm provider",
+            options=LLM_PROVIDERS,
         )
-        if env_openai_api_key is None:
-            openai_api_key = st.text_input(
-                "Provide your OpenAI API key here (sk-...)",
-                type="password",
+
+        if llm_provider == "openai":
+            llm_name_options = OPENAI_CHAT_MODELS
+            llm_name = st.selectbox(
+                label="llm",
+                options=llm_name_options,
             )
-        else:
-            openai_api_key = env_openai_api_key
-        if openai_api_key == "":
-            st.stop()
+            if env_openai_api_key is None:
+                openai_api_key = st.text_input(
+                    "Provide your OpenAI API key here (sk-...)",
+                    type="password",
+                )
+            else:
+                openai_api_key = env_openai_api_key
+            if openai_api_key == "":
+                st.stop()
 
-    elif llm_provider == "hfhub":
-        llm_name = st.text_input(
-            "Provide a HF model name (google/flan-t5-large)",
-        )
-        if env_hfhub_api_key is None:
-            hfhub_api_token = st.text_input(
-                "Provide your HF API token here (hf_...)",
-                type="password",
+        elif llm_provider == "hfhub":
+            llm_name = st.text_input(
+                "Provide a HF model name (google/flan-t5-large)",
             )
-        else:
-            hfhub_api_token = env_hfhub_api_key
-        if hfhub_api_token == "" or llm_name == "":
-            st.stop()
+            if env_hfhub_api_key is None:
+                hfhub_api_token = st.text_input(
+                    "Provide your HF API token here (hf_...)",
+                    type="password",
+                )
+            else:
+                hfhub_api_token = env_hfhub_api_key
+            if hfhub_api_token == "" or llm_name == "":
+                st.stop()
 
-    elif llm_provider == "llamacpp":
-        if env_gguf_path is None:
-            gguf_path = st.text_input("Provide a path to *.gguf files")
-        else:
-            gguf_path = env_gguf_path
-        if gguf_path == "":
-            st.stop()
-        else:
-            gguf_path = Path(gguf_path)
-        if not gguf_path.exists():
-            st.warning("Provided gguf path does not exists")
-            st.stop()
-        gguf_files = sorted(list(gguf_path.glob("*.gguf")))
-        if len(gguf_files) == 0:
-            st.warning("Provided gguf path contains no gguf files")
-            st.stop()
-        gguf_map = {gf.name: gf for gf in gguf_files}
-        llm_name_options = gguf_map.keys()
-        llm_name = st.selectbox(
-            label="llm",
-            options=llm_name_options,
-        )
+        elif llm_provider == "llamacpp":
+            if env_gguf_path is None:
+                gguf_path = st.text_input("Provide a path to *.gguf files")
+            else:
+                gguf_path = env_gguf_path
+            if gguf_path == "":
+                st.stop()
+            else:
+                gguf_path = Path(gguf_path)
+            if not gguf_path.exists():
+                st.warning("Provided gguf path does not exists")
+                st.stop()
+            gguf_files = sorted(list(gguf_path.glob("*.gguf")))
+            if len(gguf_files) == 0:
+                st.warning("Provided gguf path contains no gguf files")
+                st.stop()
+            gguf_map = {gf.name: gf for gf in gguf_files}
+            llm_name_options = gguf_map.keys()
+            llm_name = st.selectbox(
+                label="llm",
+                options=llm_name_options,
+            )
 
     with st.expander("Retrieval parameters"):
 
@@ -186,11 +218,12 @@ with st.sidebar:
         temperature = st.slider("temperature", min_value=0.0, max_value=2.0, value=0.0)
         top_p = st.slider("top_p", min_value=0.0, max_value=1.0, value=1.0)
 
-        if llm_provider == "openai-chat":
+        if llm_provider == "openai":
             llm = ChatOpenAI(
                 model_name=llm_name,
                 temperature=temperature,
                 openai_api_key=openai_api_key,
+                model_kwargs={"top_p": top_p},
             )
 
         elif llm_provider == "hfhub":
@@ -229,13 +262,6 @@ with st.sidebar:
         )
 
 
-qa_chain_prompt = PromptTemplate.from_template(prompt_template)
-qa_chain = load_qa_chain(
-    llm,
-    chain_type="stuff",
-    prompt=qa_chain_prompt,
-)
-
 
 col1, col2 = st.columns(2)
 
@@ -257,6 +283,25 @@ def escape_markdown(text):
     return text
 
 
+def format_docs_v1(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+def format_docs_v2(docs):
+
+    def one_doc(idoc, doc):
+        return f"snippet_num={idoc}\nlegis_id={doc.metadata['legis_id']}\ntitle={doc.metadata['title']}\n... {doc.page_content} ...\n"
+
+    snips = []
+    for idoc, doc in enumerate(docs):
+        txt = one_doc(idoc, doc)
+        snips.append(txt)
+
+    return "\n===\n".join(snips)
+
+
+format_docs = format_docs_v2
+
+
 if submitted:
 
     vs_filter = {}
@@ -267,25 +312,24 @@ if submitted:
     if filter_congress_num != "":
         vs_filter["congress_num"] = int(filter_congress_num)
 
-    rdocs_and_scores = vectorstore.similarity_search_with_score(
-        query=query,
-        k=n_ret_docs,
-        filter=vs_filter,
+    retriever = vectorstore.as_retriever(
+        search_kwargs={"k": n_ret_docs, "filter": vs_filter},
     )
-    rdocs = [el[0] for el in rdocs_and_scores]
-    rscores = [el[1] for el in rdocs_and_scores]
 
-    if len(rdocs_and_scores) == 0:
-        st.warning("No documents were retrieved. Please check the filters.")
-        st.stop()
-
-    out = qa_chain.invoke(
-        {
-            "input_documents": rdocs,
-            "question": query,
-        },
-        return_only_outputs=False,
+    prompt = PromptTemplate.from_template(prompt_template)
+    rag_chain_from_docs = (
+        RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
+        | prompt
+        | llm
+        | StrOutputParser()
     )
+    rag_chain_with_source = RunnableParallel(
+        {"context": retriever, "question": RunnablePassthrough()}
+    ).assign(answer=rag_chain_from_docs)
+
+    out = rag_chain_with_source.invoke(query)
+
+
     st.session_state["out"] = out
 
 
@@ -298,15 +342,15 @@ else:
 with col1:
     do_escape_markdown = st.checkbox("escape markdown in answer")
     if do_escape_markdown:
-        st.info(escape_markdown(out["output_text"]))
+        st.info(escape_markdown(out["answer"]))
     else:
-        st.info(out["output_text"])
+        st.info(out["answer"])
 
 with col2:
 
     # group source documents
     grpd_source_docs = defaultdict(list)
-    for doc in out["input_documents"]:
+    for doc in out["context"]:
         grpd_source_docs[doc.metadata["legis_id"]].append(doc)
 
     # sort chunks in each group by start index
@@ -324,7 +368,7 @@ with col2:
 
     for legis_id, doc_grp in grpd_source_docs:
         first_doc = doc_grp[0]
-        ref = "{} chunks from {}\n\n{}\n\n[congress.gov]({}) | [govtrack.us]({})\n\n{}".format(
+        ref = "{} chunks from {}\n\n{}\n\n[congress.gov]({}) | [govtrack.us]({})\n\n[{} ({}) ]({})".format(
             len(doc_grp),
             first_doc.metadata["legis_id"],
             first_doc.metadata["title"],
@@ -338,10 +382,9 @@ with col2:
                 first_doc.metadata["legis_type"],
                 first_doc.metadata["legis_num"],
             ),
-            get_sponsor_link(
-                first_doc.metadata["sponsor_full_name"],
-                first_doc.metadata["sponsor_bioguide_id"],
-            ),
+            first_doc.metadata["sponsor_full_name"],
+            first_doc.metadata["sponsor_bioguide_id"],
+            get_sponsor_url(first_doc.metadata["sponsor_bioguide_id"]),
         )
         doc_contents = [
             "[start_index={}] ".format(doc.metadata["start_index"]) + doc.page_content
@@ -349,6 +392,8 @@ with col2:
         ]
         with st.expander(ref):
             st.write(escape_markdown("\n\n...\n\n".join(doc_contents)))
+
+st.text(format_docs(out["context"]))
 
 
 with st.sidebar:
@@ -358,8 +403,8 @@ with st.sidebar:
         "llm_name": llm_name,
         "query": query,
         "prompt_template": prompt_template,
-        "out_result": out["output_text"],
-        "out_source_documents": [doc.dict() for doc in out["input_documents"]],
+        "out_result": out["answer"],
+        "out_source_documents": [doc.dict() for doc in out["context"]],
         "time": datetime.datetime.now().isoformat(),
     }
     st.download_button(
